@@ -2,7 +2,7 @@ import {  createContext, useContext, useEffect, useMemo, useState,} from 'react'
 import type { FormEvent, ReactNode } from 'react'
 
 import { motion } from 'framer-motion'
-import { BrowserRouter, NavLink, Route, Routes, useLocation, useNavigate,} from 'react-router-dom'
+import { BrowserRouter, Navigate, NavLink, Route, Routes, useLocation, useNavigate,} from 'react-router-dom'
 
 import {
   AlertCircle,
@@ -347,6 +347,9 @@ const futureModules = [
 ========================================================= */
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    () => sessionStorage.getItem('Intillegence-authenticated') === 'true',
+  )
   const [theme, setTheme] = useState<Theme>(
     () =>
       (localStorage.getItem('Intillegence-theme') as Theme) ||
@@ -367,6 +370,19 @@ function App() {
   const changeLanguage = (next: Language) => {
     setLanguage(next)
     localStorage.setItem('Intillegence-language', next)
+  }
+
+  const login = () => {
+    sessionStorage.setItem('Intillegence-authenticated', 'true')
+    setIsAuthenticated(true)
+  }
+
+  const logout = () => {
+    ;['Intillegence-authenticated', 'token', 'accessToken', 'refreshToken', 'jwt', 'auth'].forEach((key) => {
+      sessionStorage.removeItem(key)
+      localStorage.removeItem(key)
+    })
+    setIsAuthenticated(false)
   }
 
   const text = (key: TranslationKey | string) =>
@@ -404,6 +420,7 @@ function App() {
                   language={language}
                   onLanguageChange={changeLanguage}
                   theme={theme}
+                  onLogin={login}
                 />
               }
             />
@@ -412,12 +429,17 @@ function App() {
             <Route
               path="/app/*"
               element={
-                <AppLayout
-                  language={language}
-                  theme={theme}
-                  onThemeChange={changeTheme}
-                  onLanguageChange={changeLanguage}
-                />
+                isAuthenticated ? (
+                  <AppLayout
+                    language={language}
+                    theme={theme}
+                    onThemeChange={changeTheme}
+                    onLanguageChange={changeLanguage}
+                    onLogout={logout}
+                  />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
               }
             />
 
@@ -1220,10 +1242,12 @@ function Login({
   language,
   onLanguageChange,
   theme,
+  onLogin,
 }: {
   language: Language
   onLanguageChange: (language: Language) => void
   theme: Theme
+  onLogin: () => void
 }) {
   const navigate = useNavigate()
 
@@ -1239,11 +1263,13 @@ function Login({
   ) => {
     event.preventDefault()
 
-    setLoading(true)
+      onLogin()
+      navigate('/app/dashboard', { replace: true })
 
     window.setTimeout(() => {
       setLoading(false)
-      navigate('/app/dashboard')
+      onLogin()
+      navigate('/app/dashboard', { replace: true })
     }, 500)
   }
 
@@ -1460,11 +1486,13 @@ function AppLayout({
   theme,
   onThemeChange,
   onLanguageChange,
+  onLogout,
 }: {
   language: Language
   theme: Theme
   onThemeChange: (theme: Theme) => void
   onLanguageChange: (language: Language) => void
+  onLogout: () => void
 }) {
   const [collapsed, setCollapsed] =
     useState(false)
@@ -1660,6 +1688,19 @@ function AppLayout({
             <MoreHorizontal size={16} />
 
           </div>
+
+          <button
+            className="sidebar-logout"
+            onClick={() => {
+              onLogout()
+              navigate('/login', { replace: true })
+            }}
+            title={collapsed ? 'Logout' : undefined}
+            aria-label="Logout"
+          >
+            <LogOut size={17} />
+            <span>Logout</span>
+          </button>
 
 
           <div className="ecosystem">
@@ -2788,11 +2829,6 @@ function People({
           {t.export}
         </button>
 
-        <button className="button primary">
-          <Plus size={16} />
-          Add employee
-        </button>
-
       </PageHeader>
 
 
@@ -3115,172 +3151,169 @@ function EmployeeDrawer({
       className="drawer-backdrop"
       onClick={onClose}
     >
-
+ 
       <aside
         className="employee-drawer"
         onClick={(event) =>
           event.stopPropagation()
         }
       >
-
+ 
         <div className="drawer-header">
-
+ 
           <span>
             EMPLOYEE PROFILE
           </span>
-
+ 
           <button
             className="icon-button"
             onClick={onClose}
           >
             <X size={18} />
           </button>
-
+ 
         </div>
-
-
+ 
+ 
         <div className="profile-heading">
-
+ 
           <div className="avatar profile-avatar">
             {employee.initials}
           </div>
-
+ 
           <div>
-
+ 
             <h2>
               {employee.firstName}{' '}
               {employee.lastName}
             </h2>
-
+ 
             <p>
               {employee.jobTitle}
             </p>
-
+ 
             <StatusBadge
               status={employee.status}
             />
-
+ 
           </div>
-
+ 
         </div>
-
-
+ 
+ 
         <div className="profile-details">
-
+ 
           <div>
             <span>Employee ID</span>
             <strong>
               EMP-{employee.id}
             </strong>
           </div>
-
+ 
           <div>
             <span>Department</span>
             <strong>
               {employee.department}
             </strong>
           </div>
-
+ 
           <div>
             <span>Manager</span>
             <strong>
               {employee.manager}
             </strong>
           </div>
-
+ 
           <div>
             <span>Joined</span>
             <strong>
               {employee.joined}
             </strong>
           </div>
-
+ 
           <div>
             <span>Location</span>
             <strong>
               {employee.location}
             </strong>
           </div>
-
+ 
           <div>
             <span>Email</span>
             <strong>
               {employee.email}
             </strong>
           </div>
-
+ 
         </div>
-
-
-        <div className="profile-tabs">
-
-          <button className="active">
-            Overview
-          </button>
-
-          <button>
-            Documents
-          </button>
-
-          <button>
-            Leave
-          </button>
-
-          <button>
-            Activity
-          </button>
-
+ 
+ 
+        <div className="drawer-section-title">
+          Personal Information
         </div>
-
-
-        <div className="profile-section">
-
-          <h3>
-            360° employee view
-          </h3>
-
-          <div className="link-row">
-
-            <BriefcaseBusiness size={16} />
-
-            <span>
-              Onboarding history
-            </span>
-
-            <ChevronRight size={15} />
-
+ 
+        <div className="profile-details">
+ 
+          <div>
+            <span>Gender</span>
+            <strong>
+              {employee.gender}
+            </strong>
           </div>
-
-
-          <div className="link-row">
-
-            <CalendarDays size={16} />
-
-            <span>
-              Leave balance & requests
-            </span>
-
-            <ChevronRight size={15} />
-
+ 
+          <div>
+            <span>Marital Status</span>
+            <strong>
+              {employee.maritalStatus}
+            </strong>
           </div>
-
-
-          <div className="link-row">
-
-            <ShieldCheck size={16} />
-
-            <span>
-              Documents & certifications
-            </span>
-
-            <ChevronRight size={15} />
-
+ 
+          <div>
+            <span>Children</span>
+            <strong>
+              {employee.numberOfChildren}
+            </strong>
           </div>
-
+ 
+          <div>
+            <span>National ID</span>
+            <strong>
+              {employee.nationalId}
+            </strong>
+          </div>
+ 
+          <div>
+            <span>Personal Phone</span>
+            <strong>
+              {employee.personalPhone}
+            </strong>
+          </div>
+ 
+          <div>
+            <span>Professional Phone</span>
+            <strong>
+              {employee.professionalPhone}
+            </strong>
+          </div>
+ 
+          <div>
+            <span>Passport Number</span>
+            <strong>
+              {employee.passportNumber ?? '—'}
+            </strong>
+          </div>
+ 
+          <div>
+            <span>Passport Expiry</span>
+            <strong>
+              {employee.passportValidityDate}
+            </strong>
+          </div>
+ 
         </div>
-
+ 
       </aside>
-
+ 
     </div>
   )
 }
@@ -3311,56 +3344,12 @@ function ModulePage({
           Export
         </button>
 
-        <button className="button primary">
-          <Plus size={16} />
-          Create request
-        </button>
+        
 
       </PageHeader>
 
 
-      <div className="module-hero">
-
-        <div className="module-icon">
-          <BriefcaseBusiness size={22} />
-        </div>
-
-        <div>
-
-          <h2>
-            {title} workspace
-          </h2>
-
-          <p>
-            This module is connected to the shared
-            HR data layer. Mock records are ready
-            to be replaced by REST services.
-          </p>
-
-        </div>
-
-
-        <div className="module-metrics">
-
-          <span>
-            <strong>
-              {data.length}
-            </strong>
-            {' '}
-            Active records
-          </span>
-
-          <span>
-            <strong>
-              94%
-            </strong>
-            {' '}
-            On time
-          </span>
-
-        </div>
-
-      </div>
+      
 
 
       <section className="panel module-panel">
@@ -3722,10 +3711,7 @@ function DocumentsPage() {
           Document types
         </button>
 
-        <button className="button primary">
-          <Plus size={16} />
-          Upload document
-        </button>
+       
 
       </PageHeader>
 

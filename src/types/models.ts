@@ -6,7 +6,19 @@ export type Role = 'HR Administrator' | 'HR' | 'Manager' | 'Employee' | 'Local I
 export interface Department { id: string; name: string; head: string; employeeCount: number; color: string }
 export interface Employee {
   id: number; firstName: string; lastName: string; jobTitle: string; department: string; manager: string
-  employmentType: EmploymentType; status: EmployeeStatus; location: string; joined: string; email: string; initials: string
+  employmentType: EmploymentType; status: EmployeeStatus; location: string; joined: string; email: string; initials: string ;
+  userId: number;
+  gender: 'Male' | 'Female';
+  maritalStatus: 'Single' | 'Married' | 'Divorced' | 'Widowed';
+  numberOfChildren: number;
+  nationalId: string;
+  nationalityId: number;
+  passportNumber: string | null;
+  passportValidityDate: string | null;
+  personalPhone: string;
+  professionalPhone: string;
+  personalInfoCompletedAt: string | null;
+  personalInfoDismissedUntil: string | null;
 }
 export type OnboardingStage = 'HR Validation' | 'Manager Approval' | 'Local IT' | 'ISD' | 'Completed'
 export interface ChecklistItem { id: string; label: string; owner: string; done: boolean }
