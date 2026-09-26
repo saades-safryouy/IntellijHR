@@ -1,0 +1,15 @@
+export function StatusBadge({
+  status,
+}: {
+  status: string
+}) {
+  return (
+    <span
+      className={`status-badge ${status
+        .toLowerCase()
+        .replace(' ', '-')}`}
+    >
+      {status}
+    </span>
+  )
+}

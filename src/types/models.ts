@@ -8,6 +8,7 @@ export interface Employee {
   id: number; firstName: string; lastName: string; jobTitle: string; department: string; manager: string
   employmentType: EmploymentType; status: EmployeeStatus; location: string; joined: string; email: string; initials: string ;
   userId: number;
+  role?: Role;
   gender: 'Male' | 'Female';
   maritalStatus: 'Single' | 'Married' | 'Divorced' | 'Widowed';
   numberOfChildren: number;
@@ -30,5 +31,34 @@ export interface LeaveType { id: string; name: string; color: string; balance: n
 export interface LeaveRequest { id: string; employee: string; type: string; start: string; end: string; duration: number; backup: string; status: 'Pending' | 'Approved' | 'Rejected' }
 export interface Holiday { id: string; name: string; date: string; days: number; recurring: boolean; type: 'Public' | 'Company' }
 export interface Notification { id: string; title: string; detail: string; time: string; unread: boolean; type: 'warning' | 'info' | 'success' }
-export interface User { id: number; name: string; title: string; role: Role; initials: string }
+export interface User { 
+  id: number
+  name: string
+  title: string
+  role: Role
+  initials: string
+  email: string
+  firstName?: string
+  lastName?: string
+  jobTitle?: string
+  department?: string
+  manager?: string
+  location?: string
+  employmentType?: EmploymentType
+  status?: EmployeeStatus
+  joined?: string
+  userId?: number
+  gender?: 'Male' | 'Female'
+  maritalStatus?: 'Single' | 'Married' | 'Divorced' | 'Widowed'
+  numberOfChildren?: number
+  nationalId?: string
+  nationalityId?: number
+  passportNumber?: string | null
+  passportValidityDate?: string | null
+  personalPhone?: string
+  professionalPhone?: string
+  personalInfoCompletedAt?: string | null
+  personalInfoDismissedUntil?: string | null
+}
+
 export interface AuditLog { id: string; action: string; actor: string; time: string; category: string }

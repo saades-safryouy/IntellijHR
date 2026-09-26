@@ -1,6 +1,14 @@
 import type { Department, Employee, Holiday, LeaveRequest, LeaveType, Notification, OffboardingRequest, OnboardingRequest, User } from '../types/models'
 
-export const currentUser: User = { id: 1, name: 'Saad ES-SAFRYOUY', title: 'HR Administrator', role: 'HR Administrator', initials: 'SE' }
+// Demo users for testing authentication
+export const demoUsers: User[] = [
+  { id: 1, name: 'Saad ES-SAFRYOUY', title: 'HR Administrator', role: 'HR Administrator', initials: 'SE', email: 'saad.hr@intillj.com' },
+  { id: 5001, name: 'Ahmed Benali', title: 'Senior Software Engineer', role: 'Employee', initials: 'AB', email: 'ahmed.benali@intillj.com' },
+  { id: 5002, name: 'Sara El Idrissi', title: 'Product Designer', role: 'Employee', initials: 'SE', email: 'sara.elidrissi@intillj.com' },
+  { id: 5003, name: 'Nadia Rahmani', title: 'Engineering Director', role: 'Manager', initials: 'NR', email: 'nadia.rahmani@intillj.com' },
+]
+
+export const currentUser: User = demoUsers[0] // Default to HR user
 export const departments: Department[] = [
   { id: 'eng', name: 'Engineering', head: 'Nadia Rahmani', employeeCount: 64, color: '#3b82f6' },
   { id: 'ops', name: 'Operations', head: 'Karim Haddad', employeeCount: 48, color: '#28c7a5' },
