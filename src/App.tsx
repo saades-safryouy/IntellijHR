@@ -25,6 +25,10 @@ import { PerformancePage } from './pages/performance/PerformancePage'
 import { TrainingPage } from './pages/training/TrainingPage'
 import { PayrollPage } from './pages/payroll/PayrollPage'
 import { EmployeeDashboard } from './pages/employee/EmployeeDashboard'
+import { EmployeeProfilePage } from './pages/employee/EmployeeProfilePage'
+import { EmployeeLeavePage } from './pages/employee/EmployeeLeavePage'
+import { EmployeeHolidaysPage } from './pages/employee/EmployeeHolidaysPage'
+import { EmployeeDocumentsPage } from './pages/employee/EmployeeDocumentsPage'
 import './App.css'
 
 function AppContent() {
@@ -91,6 +95,10 @@ function AppContent() {
             }>
               <Route index element={<Navigate to="/employee/dashboard" replace />} />
               <Route path="dashboard" element={<EmployeeDashboard />} />
+              <Route path="profile" element={<EmployeeProfilePage />} />
+              <Route path="leave" element={<EmployeeLeavePage />} />
+              <Route path="holidays" element={<EmployeeHolidaysPage />} />
+              <Route path="documents" element={<EmployeeDocumentsPage />} />
             </Route>
 
             <Route path="*" element={<PublicLanding language={language} onLanguageChange={changeLanguage} onThemeChange={changeTheme} theme={theme} />} />

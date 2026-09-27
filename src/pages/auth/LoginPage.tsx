@@ -170,9 +170,9 @@ export function LoginPage({
             <small>
               <strong>Demo Credentials:</strong>
               <br />
-              HR: hr@example.com / password123
+              HR: saad.hr@intillj.com / password
               <br />
-              Employee: emp@example.com / password123
+              Employee: ahmed.benali@intillj.com / password
             </small>
           </div>
         </div>

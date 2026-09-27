@@ -2,7 +2,10 @@ import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   Bell,
-  ChevronRight,
+  CalendarDays,
+  CircleHelp,
+  FolderOpen,
+  LayoutDashboard,
   LogOut,
   Menu,
   Moon,
@@ -11,12 +14,15 @@ import {
   PanelLeftOpen,
   Search,
   Sun,
+  User,
   X,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import type { Language, Theme } from '../../contexts/I18nContext'
 import { Brand } from './Brand'
 import { LanguageSwitch } from './LanguageSwitch'
+import { NotificationPanel } from '../notifications/NotificationPanel'
+import { employeeDashboardTranslations } from '../../pages/employee/translations'
 
 export function EmployeeLayout({
   language,
@@ -36,13 +42,14 @@ export function EmployeeLayout({
   const [showNotifications, setShowNotifications] = useState(false)
   const { currentUser } = useAuth()
   const navigate = useNavigate()
+  const t = employeeDashboardTranslations[language]
 
   const navItems = [
-    { label: 'Dashboard', path: '/employee/dashboard', icon: '🏠' },
-    { label: 'My Profile', path: '/employee/profile', icon: '👤' },
-    { label: 'My Leave', path: '/employee/leave', icon: '📅' },
-    { label: 'Holidays', path: '/employee/holidays', icon: '🎉' },
-    { label: 'My Documents', path: '/employee/documents', icon: '📄' },
+    { label: t.navDashboard, path: '/employee/dashboard', icon: LayoutDashboard },
+    { label: t.navProfile, path: '/employee/profile', icon: User },
+    { label: t.navLeave, path: '/employee/leave', icon: CalendarDays },
+    { label: t.navHolidays, path: '/employee/holidays', icon: CalendarDays },
+    { label: t.navDocuments, path: '/employee/documents', icon: FolderOpen },
   ]
 
   const handleLogout = () => {
@@ -51,117 +58,127 @@ export function EmployeeLayout({
   }
 
   return (
-    <div className="app-layout">
-      {/* Sidebar */}
+    <div className="app-frame">
       <aside className={`sidebar ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
-        <div className="sidebar-header">
-          <Brand theme={theme} />
+        <div className="brand-wrap">
+          <Brand compact={collapsed} theme={theme} />
           <button
-            className="sidebar-toggle"
-            onClick={() => setCollapsed(!collapsed)}
-            aria-label="Toggle sidebar"
+            className="icon-button sidebar-close"
+            onClick={() => setMobileOpen(false)}
+            aria-label="Close navigation"
           >
-            {collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+            <X size={18} />
           </button>
         </div>
 
-        <nav className="sidebar-nav">
+        <div className="workspace-label">{t.employeePortal}</div>
+
+        <nav>
           {navItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              title={collapsed ? item.label : undefined}
               onClick={() => setMobileOpen(false)}
             >
-              <span className="nav-icon">{item.icon}</span>
-              <span className="nav-label">{item.label}</span>
-              <ChevronRight size={16} className="nav-arrow" />
+              <item.icon size={18} />
+              <span>{item.label}</span>
             </NavLink>
           ))}
         </nav>
 
-        <div className="sidebar-footer">
-          <button className="nav-item" onClick={handleLogout}>
-            <span className="nav-icon">
-              <LogOut size={18} />
-            </span>
-            <span className="nav-label">Logout</span>
+        <div className="sidebar-bottom">
+          <div className="sidebar-help">
+            <CircleHelp size={18} />
+            <span>{t.help}</span>
+          </div>
+
+          <div className="mini-user">
+            <div className="avatar">{currentUser?.initials}</div>
+            {!collapsed && (
+              <div>
+                <strong>{currentUser?.name}</strong>
+                <span>{currentUser?.title || currentUser?.jobTitle || t.employeePortal}</span>
+              </div>
+            )}
+            <MoreHorizontal size={16} />
+          </div>
+
+          <button
+            className="sidebar-logout"
+            onClick={handleLogout}
+            title={collapsed ? t.logout : undefined}
+            aria-label={t.logout}
+          >
+            <LogOut size={17} />
+            <span>{t.logout}</span>
           </button>
         </div>
       </aside>
 
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div className="sidebar-overlay" onClick={() => setMobileOpen(false)} />
-      )}
+      {mobileOpen && <div className="sidebar-overlay" onClick={() => setMobileOpen(false)} />}
 
-      {/* Main content */}
-      <div className="app-main">
-        {/* Header */}
-        <header className="app-header">
-          <div className="header-left">
-            <button
-              className="menu-toggle"
-              onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label="Toggle menu"
-            >
-              {mobileOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
+      <main className="main-shell">
+        <header className="topbar">
+          <button
+            className="icon-button mobile-menu"
+            onClick={() => setMobileOpen(true)}
+            aria-label="Open navigation"
+          >
+            <Menu size={20} />
+          </button>
 
-            <div className="header-search">
-              <Search size={18} />
-              <input type="text" placeholder="Search..." />
-            </div>
+          <button
+            className="icon-button collapse-toggle"
+            onClick={() => setCollapsed(!collapsed)}
+            aria-label="Toggle sidebar"
+          >
+            {collapsed ? <PanelLeftOpen size={19} /> : <PanelLeftClose size={19} />}
+          </button>
+
+          <div className="global-search">
+            <Search size={17} />
+            <input placeholder={t.search} />
+            <kbd>⌘ K</kbd>
           </div>
 
-          <div className="header-right">
-            {/* Notifications */}
-            <div className="header-item">
+          <div className="top-actions">
+            <LanguageSwitch language={language} onChange={onLanguageChange} />
+
+            <button
+              className="theme-toggle"
+              onClick={() => onThemeChange(theme === 'dark' ? 'light' : 'dark')}
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+            </button>
+
+            <div className="notification-wrap">
               <button
-                className="icon-button"
+                className="icon-button notification-button"
                 onClick={() => setShowNotifications(!showNotifications)}
-                aria-label="Notifications"
+                aria-label={t.notifications}
               >
-                <Bell size={20} />
+                <Bell size={19} />
+                <i>2</i>
               </button>
+              {showNotifications && <NotificationPanel />}
             </div>
 
-            {/* Theme toggle */}
-            <div className="header-item">
-              <button
-                className="icon-button"
-                onClick={() => onThemeChange(theme === 'dark' ? 'light' : 'dark')}
-                aria-label="Toggle theme"
-              >
-                {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-              </button>
-            </div>
-
-            {/* Language switch */}
-            <div className="header-item">
-              <LanguageSwitch language={language} onChange={onLanguageChange} />
-            </div>
-
-            {/* User menu */}
-            <div className="header-user">
-              <div className="user-avatar">{currentUser?.initials}</div>
-              <div className="user-info">
-                <div className="user-name">{currentUser?.name}</div>
-                <div className="user-role">Employee</div>
+            <div className="top-user">
+              <div className="avatar">{currentUser?.initials}</div>
+              <div>
+                <strong>{currentUser?.name}</strong>
+                <span>{currentUser?.title || currentUser?.jobTitle || t.employeePortal}</span>
               </div>
-              <button className="icon-button" aria-label="More options">
-                <MoreHorizontal size={18} />
-              </button>
             </div>
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="app-content">
+        <div className="content">
           <Outlet />
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   )
 }
-

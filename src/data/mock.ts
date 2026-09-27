@@ -131,9 +131,12 @@ export const leaveTypes: LeaveType[] = [
   { id: 'unpaid', name: 'Unpaid leave', color: '#a78bfa', balance: 30, used: 0 },
 ]
 export const leaveRequests: LeaveRequest[] = [
+  { id: 'LV-392', employee: 'Ahmed Benali', type: 'Annual leave', start: '15 Oct 2026', end: '17 Oct 2026', duration: 3, backup: 'Othmane Berrada', status: 'Pending' },
   { id: 'LV-391', employee: 'Sara El Idrissi', type: 'Annual leave', start: '09 Sep 2026', end: '12 Sep 2026', duration: 4, backup: 'Othmane Berrada', status: 'Approved' },
   { id: 'LV-390', employee: 'Meriem Tazi', type: 'Annual leave', start: '21 Sep 2026', end: '23 Sep 2026', duration: 3, backup: 'Yassine Fathi', status: 'Pending' },
   { id: 'LV-389', employee: 'Lina Chakir', type: 'Sick leave', start: '07 Sep 2026', end: '08 Sep 2026', duration: 2, backup: 'Omar Bennani', status: 'Pending' },
+  { id: 'LV-388', employee: 'Ahmed Benali', type: 'Annual leave', start: '04 Aug 2026', end: '08 Aug 2026', duration: 5, backup: 'Sara El Idrissi', status: 'Approved' },
+  { id: 'LV-370', employee: 'Ahmed Benali', type: 'Sick leave', start: '22 Jun 2026', end: '22 Jun 2026', duration: 1, backup: 'Nadia Rahmani', status: 'Approved' },
 ]
 export const holidays: Holiday[] = [
   { id: 'h1', name: 'Prophet Birthday', date: '26 Aug 2026', days: 1, recurring: true, type: 'Public' },
