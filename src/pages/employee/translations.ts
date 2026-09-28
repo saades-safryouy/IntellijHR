@@ -403,4 +403,4 @@ export const employeeDashboardTranslations = {
   },
 } as const
 
-export type EmployeeCopy = (typeof employeeDashboardTranslations)['en']
+export type EmployeeCopy = (typeof employeeDashboardTranslations)[keyof typeof employeeDashboardTranslations]
