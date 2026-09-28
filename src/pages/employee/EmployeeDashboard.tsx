@@ -456,7 +456,7 @@ function TeamRow({
   t,
 }: {
   person: Employee
-  t: (typeof employeeDashboardTranslations)['en']
+  t: (typeof employeeDashboardTranslations)[keyof typeof employeeDashboardTranslations]
 }) {
   return (
     <div className="team-row">
