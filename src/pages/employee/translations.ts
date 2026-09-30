@@ -238,7 +238,7 @@ const en = {
   requestId: 'Request',
 } as const
 
-const fr: typeof en = {
+const fr: EmployeeCopy  = {
   employeePortal: 'Portail employé',
   workspace: 'Mon espace',
   welcomeMessage: 'Congés, équipe et documents — au même endroit.',
@@ -455,7 +455,7 @@ const fr: typeof en = {
   requestId: 'Demande',
 }
 
-const ar: typeof en = {
+const ar: EmployeeCopy  = {
   employeePortal: 'بوابة الموظف',
   workspace: 'مساحة العمل',
   welcomeMessage: 'إجازاتك وفريقك ومستنداتك في مكان واحد.',
@@ -673,7 +673,9 @@ const ar: typeof en = {
 }
 
 export const employeeDashboardTranslations = { en, fr, ar } as const
-export type EmployeeCopy = typeof en
+export type EmployeeCopy = {
+  [K in keyof typeof en]: string
+}
 export type EmployeeCopyKey = keyof EmployeeCopy
 
 // ── runtime helpers ─────────────────────────────────────────────────────
