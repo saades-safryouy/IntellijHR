@@ -1,22 +1,33 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowRight,
   CalendarDays,
+  ClipboardCheck,
   Clock3,
   FileText,
   FolderOpen,
   MapPin,
   UserRound,
-  Users,
-  WalletCards,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
-import { employees, holidays, leaveRequests, leaveTypes, notifications } from '../../data/mock'
+import {
+  ensureDynamicNotifications,
+  getEmployees,
+  getHolidays,
+  getLeaveEntitlements,
+  getLeaveRequests,
+  getLeaveTypes,
+  getMyNotifications,
+  getMyOnboarding,
+  getUnreadCount,
+  markNotificationRead,
+  resolveEmployee,
+  updateEmployeeProfile,
+} from '../../data/employeeStore'
 import type { Employee } from '../../types/models'
 import {
-  calculateProfileCompletion,
   daysUntil,
   employeeFullName,
   formatDate,
@@ -24,10 +35,12 @@ import {
   getGreeting,
   getWeekDays,
   isSameDay,
-  nextPayday,
-  resolveEmployee,
 } from '../../utils/employeeHelpers'
-import { employeeDashboardTranslations } from './translations'
+import { calculateProfileCompletion, shouldShowProfileReminder } from '../../utils/profileCompletion'
+import { calculateLeaveBalances } from '../../utils/leave'
+import { holidayAppliesToEmployee, holidaysForYear } from '../../utils/holidays'
+import { passportAlertLevel } from '../../utils/passport'
+import { employeeDashboardTranslations, interpolate } from './translations'
 import {
   EmptyState,
   NotificationItem,
@@ -35,23 +48,25 @@ import {
   SectionLink,
   StatusBadge,
 } from './components'
+import { useState } from 'react'
 
 export function EmployeeDashboard() {
   const { currentUser } = useAuth()
   const { language } = useI18n()
   const t = employeeDashboardTranslations[language]
-  const [dismissedProfileReminder, setDismissedProfileReminder] = useState(false)
-  const [clockedIn, setClockedIn] = useState(true)
-  const [clockedAt] = useState('08:46')
-  const [visibleNotifications, setVisibleNotifications] = useState(notifications.map((item) => item.id))
+  const [, force] = useState(0)
+  const refresh = () => force((n) => n + 1)
 
-  const employee = resolveEmployee(currentUser, employees)
+  const employee = resolveEmployee(currentUser)
+
+  useEffect(() => {
+    if (employee) ensureDynamicNotifications(employee)
+  }, [employee])
 
   const myLeave = useMemo(() => {
     if (!employee) return []
-    const fullName = employeeFullName(employee)
-    return leaveRequests.filter((request) => request.employee === fullName)
-  }, [employee])
+    return getLeaveRequests().filter((request) => request.userId === employee.userId)
+  }, [employee, force])
 
   if (!currentUser) {
     return (
@@ -70,24 +85,34 @@ export function EmployeeDashboard() {
   }
 
   const { percentage: profileCompletion, missing: missingFields } = calculateProfileCompletion(employee)
-  const pendingRequests = myLeave.filter((request) => request.status === 'Pending')
-  const annual = leaveTypes[0]
-  const remaining = annual.balance - annual.used
-  const upcomingHolidays = holidays
+  const showNudge = shouldShowProfileReminder(employee)
+  const balances = calculateLeaveBalances(
+    employee.userId,
+    getLeaveTypes(),
+    getLeaveEntitlements(),
+    getLeaveRequests(),
+  )
+  const annual = balances.find((b) => b.type.id === 'annual') ?? balances[0]
+  const remaining = annual?.remaining ?? 0
+  const pendingRequests = myLeave.filter((request) => request.status === 'pending')
+  const year = new Date().getFullYear()
+  const upcomingHolidays = holidaysForYear(getHolidays(), year)
+    .filter((holiday) => holidayAppliesToEmployee(holiday, employee))
     .map((holiday) => ({ ...holiday, inDays: daysUntil(holiday.date) }))
     .filter((holiday) => holiday.inDays >= 0)
     .sort((a, b) => a.inDays - b.inDays)
   const nextHoliday = upcomingHolidays[0]
-  const payday = nextPayday()
-  const paydayIn = daysUntil(payday.toISOString())
-  const team = employees.filter(
-    (person) => person.department === employee.department && person.id !== employee.id,
-  )
+  const onboarding = getMyOnboarding(employee.userId)
+  const inbox = getMyNotifications(employee.userId).slice(0, 5)
+  const unread = getUnreadCount(employee.userId)
   const week = getWeekDays()
   const today = new Date()
-  const inbox = visibleNotifications
-    .map((id) => notifications.find((item) => item.id === id))
-    .filter((item): item is NonNullable<typeof item> => Boolean(item))
+  const passportLevel = passportAlertLevel(employee.passportValidityDate)
+
+  const snooze = (until: string) => {
+    updateEmployeeProfile(employee.userId, { personalInfoDismissedUntil: until })
+    refresh()
+  }
 
   return (
     <div className="page employee-home">
@@ -114,48 +139,52 @@ export function EmployeeDashboard() {
               <span>
                 {t.reportsTo} {employee.manager}
               </span>
-              <span className={`clock-chip ${clockedIn ? 'in' : 'out'}`}>
-                <Clock3 size={13} />
-                {clockedIn ? `${t.clockedIn} ${t.since} ${clockedAt}` : t.clockedOut}
-              </span>
             </div>
           </div>
         </div>
 
         <div className="employee-hero-actions">
-          <button
-            className="button secondary"
-            onClick={() => setClockedIn((value) => !value)}
-          >
-            <Clock3 size={16} />
-            {clockedIn ? t.clockOut : t.clockIn}
-          </button>
           <Link to="/employee/leave" className="button primary">
             <CalendarDays size={16} />
-            {t.requestLeave}
+            {t.requestTimeOff}
           </Link>
         </div>
       </section>
 
-      {!dismissedProfileReminder && profileCompletion < 100 && (
-        <section className="profile-nudge">
+      {passportLevel && (
+        <section className={`profile-nudge ${passportLevel === 'expired' ? 'danger' : ''}`}>
           <div className="profile-nudge-copy">
-            <strong>{t.profileCompletion}</strong>
-            <p>{t.completeYourProfile}</p>
-            <ProgressBar percentage={profileCompletion} tone="orange" />
-            <small>
-              {profileCompletion}% · {missingFields.map((field) => t[field as keyof typeof t] || field).join(' · ')}
-            </small>
+            <strong>
+              {passportLevel === 'expired'
+                ? t.passportExpired
+                : interpolate(
+                    passportLevel === '30'
+                      ? t.passportExpires30
+                      : passportLevel === '60'
+                        ? t.passportExpires60
+                        : t.passportExpires90,
+                    { days: String(daysUntil(employee.passportValidityDate!)) },
+                  )}
+            </strong>
+            <p>
+              {employee.passportValidityDate
+                ? formatDate(employee.passportValidityDate, language)
+                : ''}
+            </p>
           </div>
-          <div className="profile-nudge-actions">
-            <Link to="/employee/profile" className="button primary">
-              {t.completeProfile}
-            </Link>
-            <button className="button ghost" onClick={() => setDismissedProfileReminder(true)}>
-              {t.remindMeLater}
-            </button>
-          </div>
+          <Link to="/employee/documents" className="button secondary">
+            {t.documents}
+          </Link>
         </section>
+      )}
+
+      {showNudge && (
+        <ProfileNudge
+          percentage={profileCompletion}
+          missing={missingFields}
+          t={t}
+          onSnooze={snooze}
+        />
       )}
 
       <section className="kpi-grid employee-kpis">
@@ -169,7 +198,7 @@ export function EmployeeDashboard() {
             <small>{t.days}</small>
           </strong>
           <div className="kpi-trend">
-            {annual.used} {t.leaveUsed}
+            {annual?.used ?? 0} {t.leaveUsed}
           </div>
         </article>
 
@@ -184,21 +213,19 @@ export function EmployeeDashboard() {
 
         <article className="kpi-card">
           <div className="kpi-icon">
-            <WalletCards size={18} />
+            <ClipboardCheck size={18} />
           </div>
-          <span className="kpi-label">{t.nextPayday}</span>
+          <span className="kpi-label">{t.onboardingProgress}</span>
           <strong className="kpi-value">
-            {paydayIn}
-            <small>{t.days}</small>
+            {onboarding ? onboarding.progress : '—'}
+            {onboarding ? <small>%</small> : null}
           </strong>
-          <div className="kpi-trend">
-            {formatDate(payday.toISOString(), language)} · {t.payslipNet}
-          </div>
+          <div className="kpi-trend">{onboarding ? onboarding.stage : t.noOnboarding}</div>
         </article>
 
         <article className="kpi-card">
           <div className="kpi-icon">
-            <Users size={18} />
+            <CalendarDays size={18} />
           </div>
           <span className="kpi-label">{t.upcomingHolidays}</span>
           <strong className="kpi-value">
@@ -218,11 +245,11 @@ export function EmployeeDashboard() {
         </div>
         <div className="quick-actions">
           <QuickAction to="/employee/leave" icon={<CalendarDays size={18} />} label={t.requestTimeOff} />
-          <QuickAction to="/employee/documents" icon={<FileText size={18} />} label={t.seePayslip} />
           <QuickAction to="/employee/profile" icon={<UserRound size={18} />} label={t.updateInfo} />
           <QuickAction to="/employee/documents" icon={<FolderOpen size={18} />} label={t.downloadDocs} />
-          <QuickAction to="/employee/dashboard#team" icon={<Users size={18} />} label={t.seeTeam} />
           <QuickAction to="/employee/holidays" icon={<CalendarDays size={18} />} label={t.viewCalendar} />
+          <QuickAction to="/employee/onboarding" icon={<ClipboardCheck size={18} />} label={t.navOnboarding} />
+          <QuickAction to="/employee/notifications" icon={<FileText size={18} />} label={t.navNotifications} />
         </div>
       </section>
 
@@ -239,40 +266,28 @@ export function EmployeeDashboard() {
           </div>
 
           <div className="leave-balances">
-            {leaveTypes.map((type) => {
-              const available = type.balance - type.used
-              const usedPercent = Math.round((type.used / type.balance) * 100)
-              const tone = type.id === 'sick' ? 'orange' : type.id === 'unpaid' ? 'purple' : 'blue'
+            {balances.map((balance) => {
+              const usedPercent = balance.entitlement
+                ? Math.round((balance.used / balance.entitlement) * 100)
+                : 0
+              const tone = balance.type.id === 'sick' ? 'orange' : balance.type.id === 'unpaid' ? 'purple' : 'blue'
               return (
-                <div className="leave-balance-row" key={type.id}>
+                <div className="leave-balance-row" key={balance.type.id}>
                   <div>
-                    <strong>{type.name}</strong>
+                    <strong>{t[balance.type.nameKey as keyof typeof t] || balance.type.nameKey}</strong>
                     <span>
-                      {available} {t.available} · {type.used} {t.used} · {type.balance} {t.of} {type.balance}
+                      {balance.remaining} {t.available} · {balance.used} {t.used} · {balance.pending} {t.pending}
                     </span>
                   </div>
                   <b>
-                    {available}
+                    {balance.remaining}
                     <small>{t.days}</small>
                   </b>
-                  <ProgressBar percentage={usedPercent} tone={tone} />
+                  <ProgressBar percentage={usedPercent} tone={tone} label={`${balance.remaining} ${t.days}`} />
                 </div>
               )
             })}
           </div>
-        </section>
-
-        <section className="panel payslip-card">
-          <div className="panel-title">
-            <div>
-              <h2>{t.netPay}</h2>
-              <span>{t.lastPayslip}</span>
-            </div>
-            <SectionLink to="/employee/documents">{t.viewPayslip}</SectionLink>
-          </div>
-          <strong className="payslip-amount">{t.payslipNet}</strong>
-          <p>{t.payslipGross}</p>
-          <small>{t.payslipNote}</small>
         </section>
 
         <section className="panel">
@@ -284,16 +299,17 @@ export function EmployeeDashboard() {
           </div>
           <div className="week-strip">
             {week.map((day) => {
-              const holiday = holidays.find((item) => {
+              const holiday = upcomingHolidays.find((item) => {
                 const parsed = Date.parse(item.date)
                 return !Number.isNaN(parsed) && isSameDay(new Date(parsed), day)
               })
               const away = myLeave.some((request) => {
+                if (request.status === 'rejected' || request.status === 'cancelled') return false
                 const start = Date.parse(request.start)
                 const end = Date.parse(request.end)
                 if (Number.isNaN(start) || Number.isNaN(end)) return false
                 const time = day.getTime()
-                return time >= start && time <= end && request.status !== 'Rejected'
+                return time >= start && time <= end
               })
               return (
                 <div
@@ -309,26 +325,6 @@ export function EmployeeDashboard() {
               )
             })}
           </div>
-        </section>
-
-        <section className="panel" id="team">
-          <div className="panel-title">
-            <div>
-              <h2>{t.teamMembers}</h2>
-              <span>
-                {team.length + 1} {t.inYourDepartment}
-              </span>
-            </div>
-          </div>
-          {team.length ? (
-            <div className="team-list">
-              {team.map((person) => (
-                <TeamRow key={person.id} person={person} t={t} />
-              ))}
-            </div>
-          ) : (
-            <EmptyState title={t.noTeam} />
-          )}
         </section>
 
         <section className="panel employee-span">
@@ -356,16 +352,19 @@ export function EmployeeDashboard() {
                 {myLeave.length ? (
                   myLeave.slice(0, 4).map((request) => (
                     <tr key={request.id}>
-                      <td>{request.type}</td>
+                      <td>{t[request.typeId === 'sick' ? 'leaveSick' : request.typeId === 'unpaid' ? 'leaveUnpaid' : 'leaveAnnual']}</td>
                       <td>
                         {formatDate(request.start, language)} – {formatDate(request.end, language)}
                       </td>
                       <td>
                         {request.duration} {request.duration === 1 ? t.day : t.days}
                       </td>
-                      <td>{request.backup}</td>
+                      <td>{request.backup || t.none}</td>
                       <td>
-                        <StatusBadge status={request.status} />
+                        <StatusBadge
+                          status={request.status}
+                          label={t[request.status === 'approved' ? 'statusApproved' : request.status === 'rejected' ? 'statusRejected' : request.status === 'cancelled' ? 'statusCancelled' : 'statusPending']}
+                        />
                       </td>
                     </tr>
                   ))
@@ -385,16 +384,24 @@ export function EmployeeDashboard() {
           <div className="panel-title">
             <div>
               <h2>{t.notifications}</h2>
-              <span>{t.inboxSubtitle}</span>
+              <span>
+                {unread} {t.unread}
+              </span>
             </div>
+            <SectionLink to="/employee/notifications">{t.viewAll}</SectionLink>
           </div>
           {inbox.length ? (
             inbox.map((item) => (
               <NotificationItem
                 key={item.id}
                 notification={item}
+                t={t}
+                language={language}
                 dismissLabel={t.dismissNotification}
-                onDismiss={(id) => setVisibleNotifications((current) => current.filter((value) => value !== id))}
+                onDismiss={(id) => {
+                  markNotificationRead(id)
+                  refresh()
+                }}
               />
             ))
           ) : (
@@ -415,7 +422,7 @@ export function EmployeeDashboard() {
               {upcomingHolidays.slice(0, 3).map((holiday) => (
                 <li key={holiday.id}>
                   <div>
-                    <strong>{holiday.name}</strong>
+                    <strong>{t[holiday.nameKey as keyof typeof t] || holiday.name}</strong>
                     <span>
                       {holiday.type === 'Public' ? t.publicHoliday : t.companyHoliday} · {holiday.inDays} {t.daysAway}
                     </span>
@@ -430,6 +437,75 @@ export function EmployeeDashboard() {
         </section>
       </div>
     </div>
+  )
+}
+
+function ProfileNudge({
+  percentage,
+  missing,
+  t,
+  onSnooze,
+}: {
+  percentage: number
+  missing: string[]
+  t: (typeof employeeDashboardTranslations)[keyof typeof employeeDashboardTranslations]
+  onSnooze: (until: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const defaultDate = (() => {
+    const d = new Date()
+    d.setDate(d.getDate() + 7)
+    return d.toISOString().slice(0, 10)
+  })()
+  const [until, setUntil] = useState(defaultDate)
+
+  return (
+    <section className="profile-nudge">
+      <div className="profile-nudge-copy">
+        <strong>{t.profileCompletion}</strong>
+        <p>{t.completeYourProfile}</p>
+        <ProgressBar percentage={percentage} tone="orange" label={`${percentage}%`} />
+        <small>
+          {percentage}% · {missing.map((field) => t[field as keyof typeof t] || field).join(' · ')}
+        </small>
+      </div>
+      <div className="profile-nudge-actions">
+        <Link to="/employee/profile?edit=1" className="button primary">
+          {t.completeProfile}
+        </Link>
+        {open ? (
+          <form
+            className="snooze-form"
+            onSubmit={(event) => {
+              event.preventDefault()
+              onSnooze(until)
+              setOpen(false)
+            }}
+          >
+            <label>
+              {t.snoozeUntil}
+              <input
+                type="date"
+                min={new Date().toISOString().slice(0, 10)}
+                value={until}
+                onChange={(e) => setUntil(e.target.value)}
+                required
+              />
+            </label>
+            <button type="submit" className="button secondary">
+              {t.snoozeConfirm}
+            </button>
+            <button type="button" className="button ghost" onClick={() => setOpen(false)}>
+              {t.snoozeCancel}
+            </button>
+          </form>
+        ) : (
+          <button className="button ghost" onClick={() => setOpen(true)}>
+            {t.remindMeLater}
+          </button>
+        )}
+      </div>
+    </section>
   )
 }
 
@@ -465,7 +541,10 @@ function TeamRow({
         <strong>{employeeFullName(person)}</strong>
         <span>{person.jobTitle}</span>
       </div>
-      <StatusBadge status={person.status === 'On Leave' ? t.onLeaveToday : t.availableToday} />
+      <StatusBadge status={person.status === 'On Leave' ? 'pending' : 'approved'} label={person.status === 'On Leave' ? t.onLeaveToday : t.availableToday} />
     </div>
   )
 }
+
+void TeamRow
+void getEmployees

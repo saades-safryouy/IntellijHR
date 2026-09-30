@@ -4,6 +4,7 @@ import {
   Bell,
   CalendarDays,
   CircleHelp,
+  ClipboardCheck,
   FolderOpen,
   LayoutDashboard,
   LogOut,
@@ -21,8 +22,9 @@ import { useAuth } from '../../contexts/AuthContext'
 import type { Language, Theme } from '../../contexts/I18nContext'
 import { Brand } from './Brand'
 import { LanguageSwitch } from './LanguageSwitch'
-import { NotificationPanel } from '../notifications/NotificationPanel'
+import { EmployeeNotificationPanel } from '../notifications/EmployeeNotificationPanel'
 import { employeeDashboardTranslations } from '../../pages/employee/translations'
+import { getUnreadCount, resolveEmployee } from '../../data/employeeStore'
 
 export function EmployeeLayout({
   language,
@@ -43,12 +45,16 @@ export function EmployeeLayout({
   const { currentUser } = useAuth()
   const navigate = useNavigate()
   const t = employeeDashboardTranslations[language]
+  const employee = resolveEmployee(currentUser)
+  const unread = employee ? getUnreadCount(employee.userId) : 0
 
   const navItems = [
     { label: t.navDashboard, path: '/employee/dashboard', icon: LayoutDashboard },
     { label: t.navProfile, path: '/employee/profile', icon: User },
     { label: t.navLeave, path: '/employee/leave', icon: CalendarDays },
     { label: t.navHolidays, path: '/employee/holidays', icon: CalendarDays },
+    { label: t.navOnboarding, path: '/employee/onboarding', icon: ClipboardCheck },
+    { label: t.navNotifications, path: '/employee/notifications', icon: Bell },
     { label: t.navDocuments, path: '/employee/documents', icon: FolderOpen },
   ]
 
@@ -98,7 +104,7 @@ export function EmployeeLayout({
             {!collapsed && (
               <div>
                 <strong>{currentUser?.name}</strong>
-                <span>{currentUser?.title || currentUser?.jobTitle || t.employeePortal}</span>
+                <span>{currentUser?.title || t.employeePortal}</span>
               </div>
             )}
             <MoreHorizontal size={16} />
@@ -138,7 +144,7 @@ export function EmployeeLayout({
 
           <div className="global-search">
             <Search size={17} />
-            <input placeholder={t.search} />
+            <input placeholder={t.search} aria-label={t.search} />
             <kbd>⌘ K</kbd>
           </div>
 
@@ -160,16 +166,16 @@ export function EmployeeLayout({
                 aria-label={t.notifications}
               >
                 <Bell size={19} />
-                <i>2</i>
+                {unread > 0 && <i>{unread}</i>}
               </button>
-              {showNotifications && <NotificationPanel />}
+              {showNotifications && <EmployeeNotificationPanel />}
             </div>
 
             <div className="top-user">
               <div className="avatar">{currentUser?.initials}</div>
               <div>
                 <strong>{currentUser?.name}</strong>
-                <span>{currentUser?.title || currentUser?.jobTitle || t.employeePortal}</span>
+                <span>{currentUser?.title || t.employeePortal}</span>
               </div>
             </div>
           </div>

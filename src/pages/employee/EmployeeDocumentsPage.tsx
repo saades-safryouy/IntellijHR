@@ -1,9 +1,9 @@
-import { Download } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { PageHeader } from '../../components/common/PageHeader'
-import { employees } from '../../data/mock'
-import { daysUntil, formatDate, resolveEmployee } from '../../utils/employeeHelpers'
+import { resolveEmployee } from '../../data/employeeStore'
+import { daysUntil, formatDate } from '../../utils/dates'
+import { passportAlertLevel } from '../../utils/passport'
 import { employeeDashboardTranslations } from './translations'
 import { StatusBadge } from './components'
 
@@ -11,7 +11,7 @@ export function EmployeeDocumentsPage() {
   const { currentUser } = useAuth()
   const { language } = useI18n()
   const t = employeeDashboardTranslations[language]
-  const employee = resolveEmployee(currentUser, employees)
+  const employee = resolveEmployee(currentUser)
 
   if (!employee) {
     return (
@@ -21,42 +21,54 @@ export function EmployeeDocumentsPage() {
     )
   }
 
-  const passportDays = employee.passportValidityDate ? daysUntil(employee.passportValidityDate) : null
+  const level = passportAlertLevel(employee.passportValidityDate)
+  const passportStatus =
+    !employee.passportValidityDate
+      ? 'missing'
+      : level === 'expired'
+        ? 'expired'
+        : level
+          ? 'expiring soon'
+          : 'valid'
+
   const documents = [
-    {
-      name: t.contract,
-      type: t.employment,
-      uploaded: employee.joined,
-      expiry: '—',
-      status: t.valid,
-    },
     {
       name: t.identityDoc,
       type: t.identity,
-      uploaded: employee.joined,
+      uploaded: formatDate(employee.joined, language),
       expiry: '—',
-      status: employee.nationalId ? t.valid : t.missing,
+      status: employee.nationalId ? 'valid' : 'missing',
+      label: employee.nationalId ? t.valid : t.missing,
+      available: false,
     },
     {
       name: t.passport,
       type: t.identity,
-      uploaded: employee.joined,
+      uploaded: formatDate(employee.joined, language),
       expiry: employee.passportValidityDate ? formatDate(employee.passportValidityDate, language) : '—',
-      status:
-        passportDays === null
+      status: passportStatus,
+      label:
+        passportStatus === 'missing'
           ? t.missing
-          : passportDays < 0
-            ? 'Expired'
-            : passportDays <= 90
+          : passportStatus === 'expired'
+            ? t.expired
+            : passportStatus === 'expiring soon'
               ? t.expiringSoon
               : t.valid,
+      available: false,
+      extra:
+        employee.passportValidityDate && level && level !== 'expired'
+          ? `${daysUntil(employee.passportValidityDate)} ${t.daysAway}`
+          : undefined,
     },
     {
-      name: t.lastPayslip,
-      type: t.netPay,
-      uploaded: '30 Sep 2026',
+      name: t.contract,
+      type: t.employment,
+      uploaded: formatDate(employee.joined, language),
       expiry: '—',
-      status: t.valid,
+      status: 'valid',
+      label: t.valid,
+      available: false,
     },
   ]
 
@@ -83,15 +95,15 @@ export function EmployeeDocumentsPage() {
                   <td>{document.name}</td>
                   <td>{document.type}</td>
                   <td>{document.uploaded}</td>
-                  <td>{document.expiry}</td>
                   <td>
-                    <StatusBadge status={document.status} />
+                    {document.expiry}
+                    {document.extra ? ` · ${document.extra}` : ''}
                   </td>
                   <td>
-                    <button className="button ghost">
-                      <Download size={15} />
-                      {t.download}
-                    </button>
+                    <StatusBadge status={document.status} label={document.label} />
+                  </td>
+                  <td>
+                    <span className="muted-note">{t.noFileAvailable}</span>
                   </td>
                 </tr>
               ))}

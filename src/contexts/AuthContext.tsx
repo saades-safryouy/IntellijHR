@@ -23,18 +23,29 @@ export function useAuth() {
   return context
 }
 
+function toSessionUser(source: User | (User & Partial<Employee>)): User {
+  return {
+    id: source.userId ?? source.id,
+    name: source.name,
+    title: source.title,
+    role: source.role,
+    initials: source.initials,
+    email: source.email,
+    userId: source.userId ?? source.id,
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<(User & Partial<Employee>) | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
   const [role, setRole] = useState<Role | null>(null)
 
-  // Check auth state on load
   useEffect(() => {
     const storedUser = sessionStorage.getItem('Intillegence-user')
     const storedAuth = sessionStorage.getItem('Intillegence-authenticated')
-    
+
     if (storedUser && storedAuth === 'true') {
-      const user = JSON.parse(storedUser)
+      const user = JSON.parse(storedUser) as User
       setCurrentUser(user)
       setIsAuthenticated(true)
       setRole(user.role as Role)
@@ -42,60 +53,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const login = async (email: string, password: string) => {
-    // Mock authentication - in real app this would call an API
     const { demoUsers, employees } = await import('../data/mock')
 
-    // First check demo users (HR, Managers)
-    let foundUser = demoUsers.find(user => user.email.toLowerCase() === email.toLowerCase())
-    
-    // If not found in demo users, check employees list
+    let foundUser: User | undefined = demoUsers.find(
+      (user) => user.email.toLowerCase() === email.toLowerCase(),
+    )
+
     if (!foundUser) {
-      const employee = employees.find(emp => emp.email.toLowerCase() === email.toLowerCase())
+      const employee = employees.find((emp) => emp.email.toLowerCase() === email.toLowerCase())
       if (employee) {
-        // Merge User data with Employee data
         foundUser = {
-          id: employee.id,
+          id: employee.userId,
           name: `${employee.firstName} ${employee.lastName}`,
           title: employee.jobTitle,
           role: employee.role || 'Employee',
-          initials: `${employee.firstName.charAt(0)}${employee.lastName.charAt(0)}`,
+          initials: employee.initials,
           email: employee.email,
-          firstName: employee.firstName,
-          lastName: employee.lastName,
-          jobTitle: employee.jobTitle,
-          department: employee.department,
-          manager: employee.manager,
-          employmentType: employee.employmentType,
-          status: employee.status,
-          location: employee.location,
-          joined: employee.joined,
           userId: employee.userId,
-          gender: employee.gender,
-          maritalStatus: employee.maritalStatus,
-          numberOfChildren: employee.numberOfChildren,
-          nationalId: employee.nationalId,
-          nationalityId: employee.nationalityId,
-          passportNumber: employee.passportNumber,
-          passportValidityDate: employee.passportValidityDate,
-          personalPhone: employee.personalPhone,
-          professionalPhone: employee.professionalPhone,
-          personalInfoCompletedAt: employee.personalInfoCompletedAt,
-          personalInfoDismissedUntil: employee.personalInfoDismissedUntil
         }
       }
     }
 
-    // Simple password check for demo (all users use 'password')
     if (foundUser && password === 'password') {
-      setCurrentUser(foundUser as User & Partial<Employee>)
+      const sessionUser = toSessionUser(foundUser)
+      setCurrentUser(sessionUser)
       setIsAuthenticated(true)
-      setRole(foundUser.role as Role)
-      
-      // Store in sessionStorage
-      sessionStorage.setItem('Intillegence-user', JSON.stringify(foundUser))
+      setRole(sessionUser.role)
+      sessionStorage.setItem('Intillegence-user', JSON.stringify(sessionUser))
       sessionStorage.setItem('Intillegence-authenticated', 'true')
-      
-      // No redirect here - let the LoginPage handle it based on role
     } else {
       throw new Error('Invalid credentials')
     }
@@ -110,34 +95,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.href = '/'
   }
 
-  const hasRole = (roleToCheck: Role) => {
-    return role === roleToCheck
-  }
+  const hasRole = (roleToCheck: Role) => role === roleToCheck
 
-  const hasAnyRole = (rolesToCheck: Role[]): boolean => {
-    return role ? rolesToCheck.includes(role as Role) : false
-  }
+  const hasAnyRole = (rolesToCheck: Role[]): boolean =>
+    role ? rolesToCheck.includes(role) : false
 
-  const isHR = () => {
-    return hasRole('HR Administrator') || hasRole('HR')
-  }
+  const isHR = () => hasRole('HR Administrator') || hasRole('HR')
 
-  const isEmployee = () => {
-    return hasRole('Employee')
-  }
+  const isEmployee = () => hasRole('Employee')
 
   return (
-    <AuthContext.Provider value={{
-      currentUser,
-      isAuthenticated,
-      role,
-      login,
-      logout,
-      hasRole,
-      hasAnyRole,
-      isHR,
-      isEmployee
-    }}>
+    <AuthContext.Provider
+      value={{
+        currentUser,
+        isAuthenticated,
+        role,
+        login,
+        logout,
+        hasRole,
+        hasAnyRole,
+        isHR,
+        isEmployee,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

@@ -29,6 +29,8 @@ import { EmployeeProfilePage } from './pages/employee/EmployeeProfilePage'
 import { EmployeeLeavePage } from './pages/employee/EmployeeLeavePage'
 import { EmployeeHolidaysPage } from './pages/employee/EmployeeHolidaysPage'
 import { EmployeeDocumentsPage } from './pages/employee/EmployeeDocumentsPage'
+import { EmployeeOnboardingPage } from './pages/employee/EmployeeOnboardingPage'
+import { EmployeeNotificationsPage } from './pages/employee/EmployeeNotificationsPage'
 import './App.css'
 
 function AppContent() {
@@ -99,6 +101,8 @@ function AppContent() {
               <Route path="leave" element={<EmployeeLeavePage />} />
               <Route path="holidays" element={<EmployeeHolidaysPage />} />
               <Route path="documents" element={<EmployeeDocumentsPage />} />
+              <Route path="onboarding" element={<EmployeeOnboardingPage />} />
+              <Route path="notifications" element={<EmployeeNotificationsPage />} />
             </Route>
 
             <Route path="*" element={<PublicLanding language={language} onLanguageChange={changeLanguage} onThemeChange={changeTheme} theme={theme} />} />

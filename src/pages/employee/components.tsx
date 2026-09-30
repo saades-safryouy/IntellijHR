@@ -1,21 +1,19 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { X } from 'lucide-react'
-import type { Employee, Notification } from '../../types/models'
-import { employeeFullName, formatDate } from '../../utils/employeeHelpers'
+import type { Employee, EmployeeNotification } from '../../types/models'
+import { employeeFullName, formatDate, nationalityKey } from '../../utils/employeeHelpers'
 import type { EmployeeCopy } from './translations'
+import { interpolate, leaveStatusLabel, notifTitleKey, statusCss } from './translations'
 
-export function StatusBadge({ status }: { status: string }) {
-  const className =
-    status === 'Approved' || status === 'Active' || status === 'Valid'
-      ? 'status-badge approved'
-      : status === 'Pending' || status === 'Expiring soon'
-        ? 'status-badge pending'
-        : status === 'Rejected' || status === 'Missing' || status === 'Expired'
-          ? 'status-badge rejected'
-          : 'status-badge'
-
-  return <span className={className}>{status}</span>
+export function StatusBadge({
+  status,
+  label,
+}: {
+  status: string
+  label?: string
+}) {
+  return <span className={`status-badge ${statusCss(status)}`}>{label ?? status}</span>
 }
 
 export function ProfileInfoItem({
@@ -36,13 +34,22 @@ export function ProfileInfoItem({
 export function ProgressBar({
   percentage,
   tone = 'blue',
+  label,
 }: {
   percentage: number
   tone?: 'blue' | 'mint' | 'orange' | 'purple'
+  label?: string
 }) {
   const width = Math.max(0, Math.min(100, percentage))
   return (
-    <div className="progress-track" aria-hidden="true">
+    <div
+      className="progress-track"
+      role="progressbar"
+      aria-valuenow={width}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={label ?? `${width}%`}
+    >
       <div className={`progress-fill ${tone}`} style={{ width: `${width}%` }} />
     </div>
   )
@@ -50,39 +57,43 @@ export function ProgressBar({
 
 export function NotificationItem({
   notification,
+  t,
   onDismiss,
   dismissLabel,
+  language = 'en',
 }: {
-  notification: Notification
+  notification: EmployeeNotification
+  t: EmployeeCopy
   onDismiss: (id: string) => void
   dismissLabel: string
+  language?: string
 }) {
+  const titleTemplate = t[notifTitleKey(notification.type)]
+  const title = interpolate(titleTemplate, notification.params)
+  const time = formatDate(notification.createdAt, language)
+  const tone =
+    notification.type.startsWith('passport') || notification.type === 'leave-rejected'
+      ? 'warning'
+      : notification.type === 'leave-approved'
+        ? 'success'
+        : 'info'
+
   return (
-    <div className={`inbox-item ${notification.type} ${notification.unread ? 'unread' : ''}`}>
-      <div className={`inbox-dot ${notification.type}`} />
+    <div className={`inbox-item ${tone} ${notification.read ? '' : 'unread'}`}>
+      <div className={`inbox-dot ${tone}`} />
       <div className="inbox-copy">
-        <strong>{notification.title}</strong>
-        <span>{notification.detail}</span>
-        <small>{notification.time}</small>
+        <strong>{title}</strong>
+        {notification.params?.requestId && <span>{notification.params.requestId}</span>}
+        <small>{time}</small>
       </div>
-      <button
-        className="icon-button"
-        onClick={() => onDismiss(notification.id)}
-        aria-label={dismissLabel}
-      >
+      <button className="icon-button" onClick={() => onDismiss(notification.id)} aria-label={dismissLabel}>
         <X size={15} />
       </button>
     </div>
   )
 }
 
-export function EmptyState({
-  title,
-  detail,
-}: {
-  title: string
-  detail?: string
-}) {
+export function EmptyState({ title, detail }: { title: string; detail?: string }) {
   return (
     <div className="empty-block">
       <strong>{title}</strong>
@@ -91,13 +102,7 @@ export function EmptyState({
   )
 }
 
-export function SectionLink({
-  to,
-  children,
-}: {
-  to: string
-  children: ReactNode
-}) {
+export function SectionLink({ to, children }: { to: string; children: ReactNode }) {
   return (
     <Link to={to} className="text-button">
       {children}
@@ -121,7 +126,7 @@ export function ProfileCard({
         <div>
           <h2>{employeeFullName(employee)}</h2>
           <p>{employee.jobTitle}</p>
-          <StatusBadge status={employee.status} />
+          <StatusBadge status={employee.status === 'Active' ? 'approved' : 'pending'} label={employee.status} />
         </div>
       </div>
 
@@ -131,7 +136,7 @@ export function ProfileCard({
           <ProfileInfoItem label={t.firstName} value={employee.firstName} />
           <ProfileInfoItem label={t.lastName} value={employee.lastName} />
           <ProfileInfoItem label={t.gender} value={employee.gender} />
-          <ProfileInfoItem label={t.nationality} value={t.morocco} />
+          <ProfileInfoItem label={t.nationality} value={t[nationalityKey(employee.nationalityId) as keyof EmployeeCopy]} />
           <ProfileInfoItem label={t.nationalId} value={employee.nationalId} />
         </div>
       </div>
@@ -150,6 +155,9 @@ export function ProfileCard({
         <div className="profile-grid">
           <ProfileInfoItem label={t.maritalStatus} value={employee.maritalStatus} />
           <ProfileInfoItem label={t.numberOfChildren} value={employee.numberOfChildren} />
+          <ProfileInfoItem label={t.emergencyContactName} value={employee.emergencyContactName} />
+          <ProfileInfoItem label={t.emergencyContactPhone} value={employee.emergencyContactPhone} />
+          <ProfileInfoItem label={t.emergencyContactRelationship} value={employee.emergencyContactRelationship} />
         </div>
       </div>
 
@@ -161,7 +169,7 @@ export function ProfileCard({
           <ProfileInfoItem label={t.location} value={employee.location} />
           <ProfileInfoItem label={t.employmentType} value={employee.employmentType} />
           <ProfileInfoItem label={t.manager} value={employee.manager} />
-          <ProfileInfoItem label={t.joined} value={employee.joined} />
+          <ProfileInfoItem label={t.joined} value={formatDate(employee.joined, language)} />
           <ProfileInfoItem label={t.status} value={employee.status} />
         </div>
       </div>
@@ -179,3 +187,5 @@ export function ProfileCard({
     </div>
   )
 }
+
+export { leaveStatusLabel }

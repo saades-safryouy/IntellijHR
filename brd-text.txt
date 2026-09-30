@@ -1,0 +1,415 @@
+# Business Requirements Document (BRD)
+## Human Resources Management System (HRMS)
+
+| | |
+|---|---|
+| **Document Title** | HRMS Application â€“ Business Requirements Document |
+| **Prepared By** | Business Analyst |
+| **Version** | 1.0 (Draft for Review) |
+| **Date** | September 7, 2026 |
+| **Status** | Draft |
+| **Distribution** | HR Department, IT Department, Project Sponsor, Department Heads |
+
+---
+
+## Revision History
+
+| Version | Date | Author | Description |
+|---|---|---|---|
+| 0.1 | â€” | Business Analyst | Initial draft based on data model review |
+| 1.0 | Sep 7, 2026 | Business Analyst | First complete version circulated for stakeholder review |
+
+---
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+This document defines the business requirements for the Human Resources Management System (HRMS), an internal application intended to centralize and streamline the management of employee data across the entire employment lifecycle â€” from the moment a candidate is hired to the moment they leave the company.
+
+The purpose of this BRD is to:
+
+- Describe, in business terms, what the HRMS must do for the organization.
+- Give HR, IT, and management a shared reference point before any technical design or development work starts.
+- Translate the existing raw data structures (tables currently used by the system) into functional, business-readable requirements.
+- Identify gaps and propose enhancements that go beyond what the current data model supports, so the application delivers real value rather than being a simple database front-end.
+
+### 1.2 Background
+
+The organization currently stores HR-related information across several database tables covering personal employee data, onboarding, offboarding, leave management, and public holidays. Today this data is used mostly at the record level (raw tables), with no unified interface for HR staff, managers, or employees. This creates several problems:
+
+- HR staff must query the database directly or rely on ad-hoc exports to answer simple questions ("who reports to whom", "who is on leave next week", "what equipment is pending return for a leaver").
+- There is no single, secure place where an employee's personal and administrative information lives and can be maintained.
+- Onboarding and offboarding are tracked as isolated request records, without a consolidated dashboard for HR, IT, and Facilities to track progress and see bottlenecks.
+- Leave requests, holiday calendars, and leave policies are disconnected, so calculating an accurate leave balance requires manual work.
+
+### 1.3 Scope
+
+This BRD covers five functional modules of the HRMS:
+
+1. **People Profile** â€“ central directory and profile management for employees.
+2. **Onboarding** â€“ management of the new-hire process, from request creation to completion.
+3. **Offboarding** â€“ management of the employee exit process, including equipment recovery.
+4. **Leave Management** â€“ leave policies, leave types, and leave requests.
+5. **Holidays** â€“ company/public holiday calendar.
+
+Out of scope for this version of the document (candidates for a future phase, see Section 9 â€“ Enhancements):
+
+- Payroll and compensation management.
+- Performance review / appraisal management.
+- Recruitment / applicant tracking (pre-hire stage).
+- Training and e-learning management.
+- Mobile application.
+
+### 1.4 Definitions, Acronyms
+
+| Term | Definition |
+|---|---|
+| HRMS | Human Resources Management System |
+| BA | Business Analyst |
+| FR | Functional Requirement |
+| NFR | Non-Functional Requirement |
+| ISD | Information Systems Department |
+| Local IT | Site/local IT support team involved in onboarding/offboarding equipment |
+| Requestor | The person who initiates an onboarding or offboarding request (usually HR or a manager) |
+| Assignee | The person currently responsible for progressing a request |
+| Backup | A colleague designated to cover for an employee while on leave |
+| PII | Personally Identifiable Information |
+
+---
+
+## 2. Business Objectives
+
+The HRMS should allow the organization to:
+
+1. **Centralize employee data** in a single, secure, and auditable system, eliminating scattered spreadsheets and direct database access.
+2. **Reduce onboarding time** for new hires by giving HR, IT, and managers a shared, trackable checklist instead of email threads.
+3. **Reduce offboarding risk** (security, equipment loss, unauthorized access) by enforcing a structured, checklist-driven exit process.
+4. **Give employees and managers self-service access** to personal data, leave balances, and requests, reducing HR's administrative workload.
+5. **Improve leave management accuracy** by automating balance calculations based on policies, accrual rules, and the holiday calendar.
+6. **Provide management visibility** through dashboards and reports (headcount, turnover, pending onboarding/offboarding tasks, leave forecast).
+7. **Ensure compliance** with data protection regulations, given the volume of sensitive personal data handled (national ID, passport data, emergency contacts, etc.).
+
+---
+
+## 3. Stakeholders
+
+| Stakeholder | Role / Interest |
+|---|---|
+| HR Department | Primary system owner and day-to-day user; manages profiles, onboarding, offboarding, leave |
+| Employees | End users consulting/updating their own profile, submitting leave requests |
+| Direct / Functional Managers | Approve leave requests, follow onboarding of their new team members, approve replacement/backup during offboarding |
+| IT Department / Local IT / ISD | Execute onboarding/offboarding technical tasks (accounts, equipment, mailboxes) |
+| Department Heads / Business Line Owners | Visibility on headcount and organizational structure within their scope |
+| Project Sponsor | Approves budget, scope, and priorities |
+| Data Protection Officer / Legal (if applicable) | Ensures compliance with data privacy regulations |
+
+---
+
+## 4. Current State (As-Is)
+
+- Employee personal information, onboarding requests, offboarding requests, leave data, and holidays live in separate database tables (`people_profile`, `onboarding_*`, `offboarding_*`, `leave_mgmt_*`, `holidays`) with no unified user interface.
+- Processes are coordinated manually (email, spreadsheets, verbal follow-up), using the underlying tables only as a system of record, not a system of engagement.
+- There is no visible workflow status, no notifications, and no self-service capability for employees or managers.
+- Reporting is done through manual SQL queries, which is not scalable, not user-friendly, and creates data governance risks (uncontrolled access to sensitive data).
+
+---
+
+## 5. Proposed Solution (To-Be) â€“ Overview
+
+The HRMS will be a web application composed of the five modules described below, each with its own screens, workflows, permissions, and notifications, all built on top of (and extending) the existing data model.
+
+At a high level, the target user experience is:
+
+- **Employees** log in to see and update their own profile, submit leave requests, see the holiday calendar, and track the status of their onboarding tasks.
+- **Managers** see their team's profiles, approve/deny leave requests, get visibility on onboarding progress for their new hires, and initiate offboarding when a team member leaves.
+- **HR** has full administrative access: manages profiles, drives onboarding/offboarding workflows end-to-end, configures leave policies and holidays, and generates reports.
+- **IT / Local IT / ISD** interact with their assigned onboarding/offboarding tasks (equipment, accounts, application access) through a task queue rather than ad-hoc requests.
+
+---
+
+## 6. Functional Requirements by Module
+
+### 6.1 Module: People Profile
+
+#### 6.1.1 Description
+
+The People Profile module is the core employee directory. It allows searching, viewing, and maintaining personal and administrative information for every employee, and acts as the "single source of truth" that the other modules (onboarding, offboarding, leave) reference through `user_id`.
+
+#### 6.1.2 Underlying Data (current)
+
+| Field | Type | Business Meaning |
+|---|---|---|
+| id | Integer | Unique profile record identifier |
+| user_id | Integer | Link to the employee's user/account record |
+| first_name | String | Employee first name |
+| last_name | String | Employee last name |
+| gender | String | Employee gender |
+| marital_status | String | Marital status |
+| number_of_children | Integer | Number of dependents |
+| national_id | String | National identity document number |
+| nationality_id | Integer | Reference to nationality |
+| passport_number | String | Passport number |
+| passport_validity_date | Date | Passport expiry date |
+| personal_phone | String | Personal contact number |
+| professional_phone | String | Work contact number |
+| personal_info_completed_at | Timestamp (tz) | When the employee finished completing their personal info |
+| personal_info_dismissed_until | Timestamp (tz) | Snooze date for the "complete your profile" reminder |
+| updated_at | Timestamp (tz) | Last update timestamp |
+
+#### 6.1.3 Functional Requirements
+
+| ID | Requirement |
+|---|---|
+| FR-PP-01 | The system shall allow authorized users to search for an employee by name, national ID, department, or job title. |
+| FR-PP-02 | The system shall display a profile page per employee, grouping data into logical sections: Identity, Contact, Family, Documents (ID/passport), Employment. |
+| FR-PP-03 | Employees shall be able to view and edit their own personal information (phone numbers, marital status, number of children, emergency contact), subject to HR validation for sensitive fields. |
+| FR-PP-04 | The system shall prompt employees to complete missing personal information, and allow them to postpone ("dismiss") the reminder until a chosen date (`personal_info_dismissed_until`). |
+| FR-PP-05 | The system shall record the date personal information was completed (`personal_info_completed_at`) for HR compliance tracking. |
+| FR-PP-06 | The system shall alert HR and the employee automatically before passport expiry (e.g., 90/60/30 days before `passport_validity_date`). |
+| FR-PP-07 | The system shall maintain a full audit trail of who changed which field and when. |
+| FR-PP-08 | Access to sensitive fields (national ID, passport number) shall be restricted by role (HR only, or the employee themselves). |
+| FR-PP-09 | The system shall allow HR to export a filtered employee list (e.g., all employees whose passport expires within 90 days) to Excel/CSV. |
+| FR-PP-10 | The system shall link each profile to the employee's onboarding record, offboarding record (if applicable), and leave history, for a consolidated 360Â° view. |
+
+#### 6.1.4 Suggested Enhancements (Business Analyst recommendation)
+
+- Add a **profile picture** field and an **organizational chart view** (manager/direct reports), since the current model does not expose hierarchy directly from `people_profile` (it exists in `onboarding_requests` via `direct_manager_1_id`/`direct_manager_2_id`, but should be a persistent attribute of the employee, not only captured at onboarding time).
+- Add a **document repository** per employee (scanned ID card, passport copy, diplomas, contracts) with expiry tracking, not just the passport.
+- Add **profile completeness score** (%) visible to HR to prioritize follow-up.
+- Add **employee status** (active, on leave, suspended, terminated) as a first-class, always-visible field, computed from onboarding/offboarding/leave records rather than inferred.
+- Add **skills / competencies** and **certifications** tracking to prepare for future performance/training modules.
+- Add **GDPR-style consent tracking** (data processing consent date, right-to-be-forgotten flag) given the volume of PII stored.
+
+---
+
+### 6.2 Module: Onboarding
+
+#### 6.2.1 Description
+
+Manages the full lifecycle of a new hire request, from creation to completion, including equipment provisioning, application access, and multi-stage approvals across HR, management, local IT, and ISD.
+
+#### 6.2.2 Underlying Data (current)
+
+**Core request** (`onboarding_requests`): id, first_name, last_name, start_date, end_date, email, password, department_id, home_company_id, host_company_id, assignee_id, owner_id, direct_manager_1_id, direct_manager_2_id, functional_manager_id, employment_type, outsourcing_company, is_employee, city, country_id, gender, marital_status, number_of_children, emergency_contact_name, emergency_contact_phone, emergency_relationship_link, birthday, nationality_id, personal_phone, professional_phone, national_id, passport_number, passport_validity_date, type_id, division_id, section_id, job_title_id, business_line_id, sub_business_line_id, activity_id, category, address, local_it_additional_info, local_it_user_id, isd_user_id, comment_hr, comment_md, comment_local_it, comment_isd, welcome_mail_sent, mail_provisioning_status, mail_provisioning_meta, completed_at, created_at, updated_at, deleted_at.
+
+**Supporting tables**: `onboarding_request_stages` (workflow stage history per request/role/performer), `onboarding_equipments` (equipment catalog), `onboarding_equipment_request` (equipment assigned to a request), `onboarding_checklist_items` (checklist catalog), `onboarding_checklist_item_request` (checklist progress per request), `onboarding_applications` (application catalog), `onboarding_application_request` (applications granted per request).
+
+#### 6.2.3 Functional Requirements
+
+| ID | Requirement |
+|---|---|
+| FR-OB-01 | The system shall allow HR/managers to create an onboarding request capturing the new hire's personal, employment, and organizational details. |
+| FR-OB-02 | The system shall support a multi-stage workflow (e.g., HR validation â†’ Manager validation â†’ Local IT â†’ ISD â†’ Completion), recording every stage transition with the performer, role, timestamp, and comment (`onboarding_request_stages`). |
+| FR-OB-03 | The system shall allow assigning equipment (from the `onboarding_equipments` catalog) to a request, tracking the AD device name once provisioned. |
+| FR-OB-04 | The system shall allow assigning application access (from the `onboarding_applications` catalog) to a request, and track which applications have been granted. |
+| FR-OB-05 | The system shall provide a configurable checklist (`onboarding_checklist_items`) that can be marked optional or mandatory, and applied conditionally (`applies_to` â€” e.g., by employment type or entity), with progress tracked per request. |
+| FR-OB-06 | The system shall allow each functional area (HR, Manager/MD, Local IT, ISD) to add their own comments on a request (`comment_hr`, `comment_md`, `comment_local_it`, `comment_isd`) visible according to role. |
+| FR-OB-07 | The system shall track whether the welcome email has been sent (`welcome_mail_sent`) and the mailbox provisioning status/metadata (`mail_provisioning_status`, `mail_provisioning_meta`), and allow retriggering it in case of failure. |
+| FR-OB-08 | The system shall distinguish between employees and non-employees (contractors/outsourced staff via `is_employee`, `outsourcing_company`) and adapt the checklist/workflow accordingly. |
+| FR-OB-09 | The system shall mark a request as completed (`completed_at`) only when all mandatory checklist items, equipment, and application assignments are done. |
+| FR-OB-10 | The system shall provide a dashboard showing all onboarding requests in progress, grouped by stage/assignee, with visual indicators for overdue items (start date approaching but request incomplete). |
+| FR-OB-11 | The system shall support soft-deletion of requests (`deleted_at`) for cancelled hires, without losing historical data. |
+| FR-OB-12 | The system shall notify the assignee automatically when a request is transferred to them, and notify HR when a stage is stuck beyond a configurable SLA. |
+
+#### 6.2.4 Suggested Enhancements
+
+- **Storing a plaintext/reversible `password` field in `onboarding_requests` is a security risk and should be removed from the functional and data design.** Recommend the system never stores initial account passwords; instead, generate a secure, single-use activation link sent directly to the new hire's personal email, or force a password change on first login. This should be flagged to IT/security as a priority fix, independent of new feature work.
+- Add an **onboarding satisfaction survey** sent automatically at day 30/60/90 to measure new-hire experience.
+- Add a **pre-boarding portal** for the candidate (before day one) to submit documents (ID, diplomas, bank details) directly, reducing HR data entry.
+- Checklists are already configurable, but recommend a **template library** per job title/department so the right checklist/equipment/applications are pre-selected automatically instead of chosen manually every time.
+- Add **budget/cost tracking** for equipment assigned during onboarding, linking to asset management (there is already an `itam_asset_id` reference in offboarding equipment â€” recommend the same linkage on the onboarding side for consistency).
+- Provide a **manager mobile-friendly view** so managers can approve/comment from a phone.
+
+---
+
+### 6.3 Module: Offboarding
+
+#### 6.3.1 Description
+
+Manages the employee exit process: capturing the exit reason, coordinating replacement/backup coverage, and ensuring all company equipment and access are recovered/revoked before departure.
+
+#### 6.3.2 Underlying Data (current)
+
+**Core request** (`offboarding_requests`, inferred from the fields provided): id, reference_id, user_id, requestor_id, is_employee, not_yet_hired, not_yet_hired_flagged_at, exit_date, exit_reason, exit_reason_details, replacement_person_id, temporary_backup_person_id, apply_email_forwarding, forwarding_destination, stage_notes, stage_assignees, canceled_at, canceled_by, created_at, updated_at.
+
+**Supporting tables**: `offboarding_request_equipments` (equipment being recovered, with title/type/icon/computer_name/service_tag/product/`itam_asset_id`, initial vs. current assignment flags, completion status), `offboarding_checklist_items` (checklist catalog with key/label/description/required flag/group/sort order/active flag), `offboarding_equipment_fields` (custom key/value fields per equipment, e.g., serial number confirmation, with completion tracking and "updated by" audit).
+
+#### 6.3.3 Functional Requirements
+
+| ID | Requirement |
+|---|---|
+| FR-OFF-01 | The system shall allow HR/managers to create an offboarding request for a departing employee, capturing exit date, exit reason, and detailed comments. |
+| FR-OFF-02 | The system shall support flagging a request as `not_yet_hired` (i.e., the position was never actually filled) with a timestamp, to handle edge cases without corrupting reporting. |
+| FR-OFF-03 | The system shall allow designating a **replacement person** and/or a **temporary backup person** so that responsibilities are not dropped during the transition. |
+| FR-OFF-04 | The system shall allow configuring email forwarding for the departing employee's mailbox (`apply_email_forwarding`, `forwarding_destination`), with an automatic expiry date for the forwarding rule. |
+| FR-OFF-05 | The system shall track a configurable checklist (`offboarding_checklist_items`), grouped by category (`group`), ordered (`sort_order`), and flagged as required or optional, with an active/inactive toggle for checklist governance. |
+| FR-OFF-06 | The system shall track every piece of equipment assigned to the employee (`offboarding_request_equipments`) with its recovery status, distinguishing equipment initially assigned vs. currently assigned. |
+| FR-OFF-07 | For each equipment item, the system shall support custom fields (`offboarding_equipment_fields`) to capture recovery-specific data (e.g., condition on return, confirmation of data wipe), with an audit of who completed each field and when. |
+| FR-OFF-08 | The system shall allow recording free-text notes per stage (`stage_notes`) and the list of assignees responsible for each stage (`stage_assignees`). |
+| FR-OFF-09 | The system shall allow canceling an offboarding request (`canceled_at`, `canceled_by`), for example if the employee decides to stay, while preserving history. |
+| FR-OFF-10 | The system shall block completion of the offboarding process until all required checklist items and equipment recovery fields are completed. |
+| FR-OFF-11 | The system shall automatically notify IT/Security to disable system access on the exit date, and confirm the disabling action was performed. |
+| FR-OFF-12 | The system shall provide a dashboard of all in-progress offboarding requests with overdue equipment recovery highlighted. |
+
+#### 6.3.4 Suggested Enhancements
+
+- Add an **exit interview** module (structured questionnaire) linked to the offboarding request, to capture reasons for leaving in a standardized way for turnover analysis (`exit_reason`/`exit_reason_details` currently free-form/limited).
+- Add a **knowledge transfer checklist** (documents, ongoing tasks, credentials to hand over) distinct from the equipment checklist.
+- Add **automatic access revocation integration** with Active Directory/identity provider, rather than manual checklist confirmation, to reduce security risk from delayed deprovisioning.
+- Add a **final settlement / clearance sign-off** step involving Finance (return of company property costs, last payslip), since today the model only covers equipment and IT-related checklist items.
+- Link `replacement_person_id` to the **onboarding module**, so that if the replacement isn't hired yet, an onboarding request can be auto-suggested/created from the offboarding record.
+
+---
+
+### 6.4 Module: Leave Management
+
+#### 6.4.1 Description
+
+Manages leave policies (entitlement rules), leave types, and individual leave requests, so employees and managers can plan and approve time off, and HR can enforce company/legal leave rules automatically.
+
+#### 6.4.2 Underlying Data (current)
+
+- `leave_mgmt_leave_policies`: id, company_id, leave_type_id, min_years_of_service, role_id, accrual_rate, effective_date, max_leave_balance, yearly_quota, comment, user_id, created_at, updated_at.
+- `leave_mgmt_leave_types`: id, name, paid (boolean), color, comment, created_at, updated_at.
+- `leave_mgmt_leaves`: id, user_id, type_id, `from`, `from_half`, `to`, `to_half`, backup_id, note, workflow_id, created_at, updated_at.
+
+#### 6.4.3 Functional Requirements
+
+| ID | Requirement |
+|---|---|
+| FR-LV-01 | The system shall allow HR to configure leave types (e.g., annual, sick, unpaid, maternity/paternity), each with a name, color code (for calendar display), and paid/unpaid flag. |
+| FR-LV-02 | The system shall allow HR to configure leave policies per company, role, and leave type, defining accrual rate, effective date, minimum years of service required, maximum balance, and yearly quota. |
+| FR-LV-03 | The system shall automatically calculate each employee's leave balance based on the applicable policy, their seniority, and leave already taken/approved. |
+| FR-LV-04 | Employees shall be able to submit a leave request specifying leave type, start date/half-day, end date/half-day, an optional backup colleague, and a note. |
+| FR-LV-05 | The system shall route leave requests through an approval workflow (`workflow_id`) to the employee's manager (and, if configured, a secondary approver), with the ability to approve, reject, or request changes. |
+| FR-LV-06 | The system shall validate leave requests against the available balance and warn or block submission when the balance is insufficient (per policy configuration â€” hard block vs. warning should be configurable). |
+| FR-LV-07 | The system shall exclude public holidays (from the Holidays module) and non-working days from the leave duration calculation. |
+| FR-LV-08 | The system shall display a team calendar so managers can see who is on leave, avoiding overlapping absences within a team. |
+| FR-LV-09 | The system shall notify the designated backup person when they are assigned to a leave request. |
+| FR-LV-10 | The system shall allow HR to generate leave balance and leave history reports per employee, department, or company. |
+| FR-LV-11 | The system shall support half-day leave requests on both the start and end date independently (`from_half`, `to_half`). |
+
+#### 6.4.4 Suggested Enhancements
+
+- Add **carry-over rules** (how much unused leave balance can roll over to the next year, and its expiry), which is not currently represented in `leave_mgmt_leave_policies`.
+- Add **leave cancellation / amendment workflow** for approved leave that needs to change, with re-approval if needed.
+- Add **manager delegation** (approve on behalf of) for periods when the approving manager is themselves on leave.
+- Add **accrual simulation** ("what will my balance be on [date]") to help employees plan ahead.
+- Add integration with the **Holidays module** so that regional/site-specific holidays (see below) are automatically considered per employee's location.
+- Add **compliance rules by country** (statutory minimum leave, since the organization appears to operate across multiple countries based on `country_id`, `company_id` fields elsewhere in the model).
+
+---
+
+### 6.5 Module: Holidays
+
+#### 6.5.1 Description
+
+Maintains the calendar of public/company holidays used across the organization (or per site/company), to support accurate leave calculations and general planning visibility.
+
+#### 6.5.2 Underlying Data (current)
+
+`holidays`: id, name, description, date, days_count, is_recurrent (boolean), text_color, user_id, created_at, updated_at.
+
+#### 6.5.3 Functional Requirements
+
+| ID | Requirement |
+|---|---|
+| FR-HOL-01 | The system shall allow HR to create, edit, and remove holidays, with a name, description, date, and number of days (`days_count`) for multi-day holidays. |
+| FR-HOL-02 | The system shall support recurring holidays (`is_recurrent`) that automatically appear every year without manual re-entry. |
+| FR-HOL-03 | The system shall display holidays with a distinct color (`text_color`) on the shared company calendar. |
+| FR-HOL-04 | The system shall exclude holiday dates from leave balance deduction calculations (see FR-LV-07). |
+| FR-HOL-05 | The system shall allow filtering the holiday calendar by year and, where applicable, by country/site. |
+
+#### 6.5.4 Suggested Enhancements
+
+- The current model attaches holidays to a single `user_id`, which suggests holidays may be user-specific rather than company/site-wide â€” recommend clarifying with stakeholders whether this should instead be modeled as **holidays per country/company/site**, since public holidays are almost always a group-level concept, not an individual one. This is flagged as a data model question to resolve during design.
+- Add a **holiday import** feature (e.g., from a public holiday API or government calendar) per country to reduce manual maintenance.
+- Add **optional/floating holidays** that employees can choose to take from a pool (common in multi-religious/multi-country workplaces).
+
+---
+
+## 7. Cross-Module Requirements
+
+| ID | Requirement |
+|---|---|
+| FR-XM-01 | All modules shall share a single employee identity (`user_id`) so that People Profile, Onboarding, Offboarding, and Leave records are all linked to the same person without duplication. |
+| FR-XM-02 | The system shall provide a unified search across modules (find an employee, then jump to their onboarding history, current leave balance, or offboarding status). |
+| FR-XM-03 | The system shall provide role-based dashboards: HR (operational), Manager (team view), Employee (self-service), IT/ISD (task queue). |
+| FR-XM-04 | The system shall send configurable email/in-app notifications for key events across all modules (new onboarding task assigned, leave approved/rejected, offboarding equipment overdue, passport expiring, etc.). |
+| FR-XM-05 | The system shall log every create/update/delete action with user, timestamp, and before/after values, for audit and compliance purposes. |
+
+---
+
+## 8. Non-Functional Requirements
+
+| Category | Requirement |
+|---|---|
+| **Security** | The system shall enforce role-based access control (RBAC) at both module and field level, given the sensitivity of data such as national ID, passport numbers, and salary-adjacent information. |
+| **Security** | No plaintext passwords shall ever be stored (see Section 6.2.4 finding on `onboarding_requests.password`). All credentials must be hashed or eliminated in favor of self-service activation links. |
+| **Data Privacy** | The system shall comply with applicable data protection regulations (e.g., GDPR or local equivalent) regarding storage, retention, and deletion of PII. |
+| **Availability** | The system shall be available during business hours with a target uptime of 99.5%, given its operational use for onboarding/offboarding SLAs. |
+| **Performance** | Search and list screens (e.g., employee directory) shall return results in under 2 seconds for up to [X] active employees. |
+| **Auditability** | All sensitive data changes must be traceable to a specific user and timestamp, retained for a minimum retention period aligned with legal requirements. |
+| **Localization** | The system shall support multiple languages and date formats, given the multi-country footprint suggested by `country_id`/`company_id` fields. |
+| **Integration** | The system shall expose APIs or scheduled exports to integrate with payroll, Active Directory, and IT asset management (ITAM) systems. |
+| **Usability** | Employee self-service screens shall be usable without HR training (intuitive UI, guided prompts for incomplete profiles). |
+| **Scalability** | The data model shall support multi-company/multi-country operation without structural changes (already partially reflected via `company_id`, `country_id`, `business_line_id`). |
+
+---
+
+## 9. Future Enhancements (Out of Current Scope, Recommended Roadmap)
+
+1. **Payroll integration** â€” connect leave and employment data to payroll processing.
+2. **Performance management module** â€” objectives, reviews, ratings, linked to the employee profile.
+3. **Recruitment/ATS module** â€” feed directly into Onboarding once a candidate is hired, avoiding duplicate data entry.
+4. **Learning & Development module** â€” training history, certifications, linked to profile.
+5. **Employee self-service mobile app** â€” leave requests, holiday calendar, and profile updates from a phone.
+6. **Advanced analytics/BI dashboards** â€” turnover rate, average onboarding duration, leave trends, headcount forecasting.
+7. **Workflow engine reuse** â€” the `workflow_id` concept used in Leave Management could be generalized into a shared workflow engine reused by Onboarding and Offboarding stage tracking, instead of separate ad-hoc stage tables per module.
+
+---
+
+## 10. Assumptions
+
+- Each employee has exactly one `people_profile` record, linked one-to-one with a user account (`user_id`).
+- The organization operates across multiple companies/countries, based on recurring `company_id`/`country_id` fields.
+- Managers and HR will use the same web application with different permission levels; no separate manager-only tool is planned.
+- Existing database tables will be reused/extended rather than replaced, to preserve historical data.
+
+## 11. Constraints
+
+- The solution must work with the existing underlying data model as a starting point; any structural change (e.g., holiday scoping, password removal) must be validated with the data/engineering team before implementation.
+- Multi-country compliance requirements (leave law, data residency) may impose additional constraints discovered during detailed design.
+
+## 12. Risks
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Sensitive data (national ID, passport, plaintext password field) exposed without proper access control | High | Enforce RBAC and remove password storage before go-live |
+| Holiday model ambiguity (per-user vs. company-wide) causes incorrect leave calculations | Medium | Clarify requirement with stakeholders during design phase |
+| Manual processes continue in parallel with the new system (change resistance) | Medium | Change management plan, training, phased rollout |
+| Multi-country legal leave rules not fully captured in policy configuration | Medium | Legal/HR review of policy configuration per country before launch |
+
+## 13. Success Criteria
+
+- 100% of active employees have a complete profile in the system within 60 days of go-live.
+- Average onboarding completion time reduced by a target percentage (to be defined with HR) compared to the current manual process.
+- Zero equipment recovery items left untracked at offboarding completion.
+- Leave balance disputes/errors reduced to near zero due to automated calculation.
+- HR reporting time (e.g., producing headcount or turnover reports) reduced from manual query-based process to on-demand dashboard access.
+
+## 14. Approval
+
+| Name | Role | Signature | Date |
+|---|---|---|---|
+| | Project Sponsor | | |
+| | HR Director | | |
+| | IT Manager | | |
+| | Business Analyst | | |
+
+---
+
+*This document is a draft intended to support requirement validation workshops with HR, IT, and management stakeholders. Fields, workflows, and enhancements listed above should be confirmed or adjusted based on stakeholder feedback before moving into functional design.*
+
+

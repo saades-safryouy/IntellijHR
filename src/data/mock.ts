@@ -1,14 +1,25 @@
-import type { Department, Employee, Holiday, LeaveRequest, LeaveType, Notification, OffboardingRequest, OnboardingRequest, User } from '../types/models'
+import type {
+  Department,
+  Employee,
+  EmployeeLeaveEntitlement,
+  EmployeeNotification,
+  Holiday,
+  LeaveRequest,
+  LeaveType,
+  Notification,
+  OffboardingRequest,
+  OnboardingRequest,
+  User,
+} from '../types/models'
 
-// Demo users for testing authentication
 export const demoUsers: User[] = [
   { id: 1, name: 'Saad ES-SAFRYOUY', title: 'HR Administrator', role: 'HR Administrator', initials: 'SE', email: 'saad.hr@intillj.com' },
-  { id: 5001, name: 'Ahmed Benali', title: 'Senior Software Engineer', role: 'Employee', initials: 'AB', email: 'ahmed.benali@intillj.com' },
-  { id: 5002, name: 'Sara El Idrissi', title: 'Product Designer', role: 'Employee', initials: 'SE', email: 'sara.elidrissi@intillj.com' },
+  { id: 5001, name: 'Ahmed Benali', title: 'Senior Software Engineer', role: 'Employee', initials: 'AB', email: 'ahmed.benali@intillj.com', userId: 5001 },
+  { id: 5002, name: 'Sara El Idrissi', title: 'Product Designer', role: 'Employee', initials: 'SE', email: 'sara.elidrissi@intillj.com', userId: 5002 },
   { id: 5003, name: 'Nadia Rahmani', title: 'Engineering Director', role: 'Manager', initials: 'NR', email: 'nadia.rahmani@intillj.com' },
 ]
 
-export const currentUser: User = demoUsers[0] // Default to HR user
+export const currentUser: User = demoUsers[0]
 export const departments: Department[] = [
   { id: 'eng', name: 'Engineering', head: 'Nadia Rahmani', employeeCount: 64, color: '#3b82f6' },
   { id: 'ops', name: 'Operations', head: 'Karim Haddad', employeeCount: 48, color: '#28c7a5' },
@@ -16,10 +27,11 @@ export const departments: Department[] = [
   { id: 'finance', name: 'Finance', head: 'Omar Bennani', employeeCount: 21, color: '#a78bfa' },
   { id: 'people', name: 'People & Culture', head: 'Saad ES-SAFRYOUY', employeeCount: 14, color: '#fb7185' },
 ]
+
 export const employees: Employee[] = [
   {
     id: 1048, firstName: 'Ahmed', lastName: 'Benali', jobTitle: 'Senior Software Engineer', department: 'Engineering', manager: 'Nadia Rahmani',
-    employmentType: 'Full-time', status: 'Active', location: 'Casablanca', joined: '12 Mar 2024', email: 'ahmed.benali@intillj.com', initials: 'AB',
+    employmentType: 'Full-time', status: 'Active', location: 'Casablanca', country: 'MA', joined: '2024-03-12', email: 'ahmed.benali@intillj.com', initials: 'AB',
     userId: 5001,
     gender: 'Male',
     maritalStatus: 'Married',
@@ -27,15 +39,18 @@ export const employees: Employee[] = [
     nationalId: 'BE485210',
     nationalityId: 1,
     passportNumber: 'MA3421789',
-    passportValidityDate: '2028-04-15',
+    passportValidityDate: '2026-10-26',
     personalPhone: '+212 6 61 23 45 67',
     professionalPhone: '+212 5 22 98 76 01',
-    personalInfoCompletedAt: '2024-03-14T09:22:00+01:00',
+    personalInfoCompletedAt: null,
     personalInfoDismissedUntil: null,
+    emergencyContactName: null,
+    emergencyContactPhone: null,
+    emergencyContactRelationship: null,
   },
   {
     id: 1047, firstName: 'Sara', lastName: 'El Idrissi', jobTitle: 'Product Designer', department: 'Engineering', manager: 'Nadia Rahmani',
-    employmentType: 'Full-time', status: 'On Leave', location: 'Rabat', joined: '03 Jun 2023', email: 'sara.elidrissi@intillj.com', initials: 'SE',
+    employmentType: 'Full-time', status: 'On Leave', location: 'Rabat', country: 'MA', joined: '2023-06-03', email: 'sara.elidrissi@intillj.com', initials: 'SE',
     userId: 5002,
     gender: 'Female',
     maritalStatus: 'Single',
@@ -48,11 +63,14 @@ export const employees: Employee[] = [
     professionalPhone: '+212 5 37 65 21 40',
     personalInfoCompletedAt: null,
     personalInfoDismissedUntil: '2025-01-10T00:00:00+01:00',
+    emergencyContactName: 'Karim El Idrissi',
+    emergencyContactPhone: '+212 6 11 22 33 44',
+    emergencyContactRelationship: 'Brother',
   },
   {
     id: 1046, firstName: 'Youssef', lastName: 'Alaoui', jobTitle: 'Operations Manager', department: 'Operations', manager: 'Karim Haddad',
-    employmentType: 'Full-time', status: 'Active', location: 'Casablanca', joined: '18 Jan 2022', email: 'youssef.alaoui@intillj.com', initials: 'YA',
-    userId: 5003,
+    employmentType: 'Full-time', status: 'Active', location: 'Casablanca', country: 'MA', joined: '2022-01-18', email: 'youssef.alaoui@intillj.com', initials: 'YA',
+    userId: 5007,
     gender: 'Male',
     maritalStatus: 'Married',
     numberOfChildren: 3,
@@ -64,10 +82,13 @@ export const employees: Employee[] = [
     professionalPhone: '+212 5 22 40 15 60',
     personalInfoCompletedAt: '2022-01-25T14:05:00+01:00',
     personalInfoDismissedUntil: null,
+    emergencyContactName: 'Amina Alaoui',
+    emergencyContactPhone: '+212 6 99 88 77 66',
+    emergencyContactRelationship: 'Spouse',
   },
   {
     id: 1045, firstName: 'Meriem', lastName: 'Tazi', jobTitle: 'Account Executive', department: 'Commercial', manager: 'Maya El Amrani',
-    employmentType: 'Full-time', status: 'Active', location: 'Paris', joined: '21 Nov 2024', email: 'meriem.tazi@intillj.com', initials: 'MT',
+    employmentType: 'Full-time', status: 'Active', location: 'Paris', country: 'FR', joined: '2024-11-21', email: 'meriem.tazi@intillj.com', initials: 'MT',
     userId: 5004,
     gender: 'Female',
     maritalStatus: 'Single',
@@ -80,10 +101,13 @@ export const employees: Employee[] = [
     professionalPhone: '+33 1 45 67 89 10',
     personalInfoCompletedAt: null,
     personalInfoDismissedUntil: null,
+    emergencyContactName: null,
+    emergencyContactPhone: null,
+    emergencyContactRelationship: null,
   },
   {
     id: 1044, firstName: 'Othmane', lastName: 'Berrada', jobTitle: 'Cloud Infrastructure Lead', department: 'Engineering', manager: 'Nadia Rahmani',
-    employmentType: 'Contractor', status: 'Active', location: 'Casablanca', joined: '06 Sep 2021', email: 'othmane.berrada@intillj.com', initials: 'OB',
+    employmentType: 'Contractor', status: 'Active', location: 'Casablanca', country: 'MA', joined: '2021-09-06', email: 'othmane.berrada@intillj.com', initials: 'OB',
     userId: 5005,
     gender: 'Male',
     maritalStatus: 'Divorced',
@@ -96,10 +120,13 @@ export const employees: Employee[] = [
     professionalPhone: '+212 5 22 33 11 07',
     personalInfoCompletedAt: '2021-09-08T11:40:00+01:00',
     personalInfoDismissedUntil: null,
+    emergencyContactName: 'Nour Berrada',
+    emergencyContactPhone: '+212 6 44 33 22 11',
+    emergencyContactRelationship: 'Sister',
   },
   {
     id: 1043, firstName: 'Lina', lastName: 'Chakir', jobTitle: 'Financial Controller', department: 'Finance', manager: 'Omar Bennani',
-    employmentType: 'Full-time', status: 'Suspended', location: 'Rabat', joined: '14 Feb 2020', email: 'lina.chakir@intillj.com', initials: 'LC',
+    employmentType: 'Full-time', status: 'Suspended', location: 'Rabat', country: 'MA', joined: '2020-02-14', email: 'lina.chakir@intillj.com', initials: 'LC',
     userId: 5006,
     gender: 'Female',
     maritalStatus: 'Married',
@@ -112,39 +139,132 @@ export const employees: Employee[] = [
     professionalPhone: '+212 5 37 71 22 89',
     personalInfoCompletedAt: '2020-02-16T08:15:00+01:00',
     personalInfoDismissedUntil: '2024-08-01T00:00:00+01:00',
+    emergencyContactName: 'Omar Chakir',
+    emergencyContactPhone: '+212 6 12 12 12 12',
+    emergencyContactRelationship: 'Spouse',
   },
 ]
+
 export const onboardingRequests: OnboardingRequest[] = [
-  { id: 'OB-2026-0012', employee: 'Ahmed Benali', position: 'Senior Software Engineer', department: 'Engineering', startDate: '15 Sep 2026', stage: 'ISD', assignee: 'Hicham El Mansouri', progress: 80, status: 'On track' },
-  { id: 'OB-2026-0011', employee: 'Meriem Tazi', position: 'Account Executive', department: 'Commercial', startDate: '22 Sep 2026', stage: 'Manager Approval', assignee: 'Maya El Amrani', progress: 38, status: 'At risk' },
-  { id: 'OB-2026-0010', employee: 'Yassine Fathi', position: 'Data Analyst', department: 'Finance', startDate: '01 Oct 2026', stage: 'HR Validation', assignee: 'Saad ES-SAFRYOUY', progress: 20, status: 'On track' },
-  { id: 'OB-2026-0009', employee: 'Salma Naciri', position: 'People Partner', department: 'People & Culture', startDate: '01 Sep 2026', stage: 'Completed', assignee: 'Saad ES-SAFRYOUY', progress: 100, status: 'Completed' },
+  {
+    id: 'OB-2026-0012', employee: 'Ahmed Benali', userId: 5001, position: 'Senior Software Engineer', department: 'Engineering', startDate: '2026-09-15', stage: 'ISD', assignee: 'Hicham El Mansouri', progress: 80, status: 'On track',
+    employeeTasks: [
+      { id: 't1', labelKey: 'taskWelcomePack', done: true, dueDate: '2026-09-10', employeeVisible: true },
+      { id: 't2', labelKey: 'taskIdPhoto', done: true, dueDate: '2026-09-12', employeeVisible: true },
+      { id: 't3', labelKey: 'taskCompleteProfile', done: false, dueDate: '2026-09-30', employeeVisible: true },
+      { id: 't4', labelKey: 'taskLaptopAck', done: true, dueDate: '2026-09-16', employeeVisible: true },
+      { id: 't5', labelKey: 'taskSecurityBriefing', done: false, dueDate: '2026-10-03', employeeVisible: true },
+      { id: 't6', labelKey: 'taskAdProvisioning', done: true, employeeVisible: false },
+    ],
+  },
+  {
+    id: 'OB-2026-0011', employee: 'Meriem Tazi', userId: 5004, position: 'Account Executive', department: 'Commercial', startDate: '2026-09-22', stage: 'Manager Approval', assignee: 'Maya El Amrani', progress: 38, status: 'At risk',
+    employeeTasks: [
+      { id: 'm1', labelKey: 'taskWelcomePack', done: true, dueDate: '2026-09-18', employeeVisible: true },
+      { id: 'm2', labelKey: 'taskIdPhoto', done: false, dueDate: '2026-09-24', employeeVisible: true },
+      { id: 'm3', labelKey: 'taskCompleteProfile', done: false, dueDate: '2026-10-05', employeeVisible: true },
+    ],
+  },
+  {
+    id: 'OB-2026-0010', employee: 'Yassine Fathi', userId: null, position: 'Data Analyst', department: 'Finance', startDate: '2026-10-01', stage: 'HR Validation', assignee: 'Saad ES-SAFRYOUY', progress: 20, status: 'On track',
+    employeeTasks: [],
+  },
+  {
+    id: 'OB-2026-0009', employee: 'Salma Naciri', userId: null, position: 'People Partner', department: 'People & Culture', startDate: '2026-09-01', stage: 'Completed', assignee: 'Saad ES-SAFRYOUY', progress: 100, status: 'Completed',
+    employeeTasks: [
+      { id: 's1', labelKey: 'taskWelcomePack', done: true, employeeVisible: true },
+      { id: 's2', labelKey: 'taskCompleteProfile', done: true, employeeVisible: true },
+    ],
+  },
 ]
+
 export const offboardingRequests: OffboardingRequest[] = [
   { id: 'OFF-2026-0008', employee: 'Karim Amrani', exitDate: '18 Sep 2026', reason: 'Resignation', replacement: 'Youssef Alaoui', stage: 'Equipment Recovery', progress: 72, status: 'At risk' },
   { id: 'OFF-2026-0007', employee: 'Nour El Houda', exitDate: '30 Sep 2026', reason: 'End of contract', replacement: 'To be confirmed', stage: 'Manager', progress: 32, status: 'On track' },
   { id: 'OFF-2026-0006', employee: 'Hamza Ouali', exitDate: '02 Sep 2026', reason: 'Resignation', replacement: 'None', stage: 'Completed', progress: 100, status: 'Completed' },
 ]
+
 export const leaveTypes: LeaveType[] = [
-  { id: 'annual', name: 'Annual leave', color: '#3b82f6', balance: 25, used: 7 },
-  { id: 'sick', name: 'Sick leave', color: '#f59e0b', balance: 12, used: 3 },
-  { id: 'unpaid', name: 'Unpaid leave', color: '#a78bfa', balance: 30, used: 0 },
+  { id: 'annual', nameKey: 'leaveAnnual', color: '#3b82f6', paid: true },
+  { id: 'sick', nameKey: 'leaveSick', color: '#f59e0b', paid: true },
+  { id: 'unpaid', nameKey: 'leaveUnpaid', color: '#a78bfa', paid: false },
 ]
+
+export const leaveEntitlements: EmployeeLeaveEntitlement[] = [
+  { userId: 5001, typeId: 'annual', entitlement: 25 },
+  { userId: 5001, typeId: 'sick', entitlement: 12 },
+  { userId: 5001, typeId: 'unpaid', entitlement: 30 },
+  { userId: 5002, typeId: 'annual', entitlement: 22 },
+  { userId: 5002, typeId: 'sick', entitlement: 12 },
+  { userId: 5002, typeId: 'unpaid', entitlement: 30 },
+  { userId: 5004, typeId: 'annual', entitlement: 20 },
+  { userId: 5004, typeId: 'sick', entitlement: 12 },
+  { userId: 5004, typeId: 'unpaid', entitlement: 30 },
+  { userId: 5005, typeId: 'annual', entitlement: 18 },
+  { userId: 5005, typeId: 'sick', entitlement: 8 },
+  { userId: 5005, typeId: 'unpaid', entitlement: 20 },
+  { userId: 5006, typeId: 'annual', entitlement: 25 },
+  { userId: 5006, typeId: 'sick', entitlement: 12 },
+  { userId: 5006, typeId: 'unpaid', entitlement: 30 },
+  { userId: 5007, typeId: 'annual', entitlement: 25 },
+  { userId: 5007, typeId: 'sick', entitlement: 12 },
+  { userId: 5007, typeId: 'unpaid', entitlement: 30 },
+]
+
 export const leaveRequests: LeaveRequest[] = [
-  { id: 'LV-392', employee: 'Ahmed Benali', type: 'Annual leave', start: '15 Oct 2026', end: '17 Oct 2026', duration: 3, backup: 'Othmane Berrada', status: 'Pending' },
-  { id: 'LV-391', employee: 'Sara El Idrissi', type: 'Annual leave', start: '09 Sep 2026', end: '12 Sep 2026', duration: 4, backup: 'Othmane Berrada', status: 'Approved' },
-  { id: 'LV-390', employee: 'Meriem Tazi', type: 'Annual leave', start: '21 Sep 2026', end: '23 Sep 2026', duration: 3, backup: 'Yassine Fathi', status: 'Pending' },
-  { id: 'LV-389', employee: 'Lina Chakir', type: 'Sick leave', start: '07 Sep 2026', end: '08 Sep 2026', duration: 2, backup: 'Omar Bennani', status: 'Pending' },
-  { id: 'LV-388', employee: 'Ahmed Benali', type: 'Annual leave', start: '04 Aug 2026', end: '08 Aug 2026', duration: 5, backup: 'Sara El Idrissi', status: 'Approved' },
-  { id: 'LV-370', employee: 'Ahmed Benali', type: 'Sick leave', start: '22 Jun 2026', end: '22 Jun 2026', duration: 1, backup: 'Nadia Rahmani', status: 'Approved' },
+  { id: 'LV-392', userId: 5001, employee: 'Ahmed Benali', typeId: 'annual', type: 'Annual leave', start: '2026-10-15', end: '2026-10-17', fromHalf: 'full', toHalf: 'full', duration: 3, backup: 'Othmane Berrada', backupUserId: 5005, note: 'Family visit', status: 'pending', submittedAt: '2026-09-20T09:12:00+01:00' },
+  { id: 'LV-391', userId: 5002, employee: 'Sara El Idrissi', typeId: 'annual', type: 'Annual leave', start: '2026-09-09', end: '2026-09-12', fromHalf: 'full', toHalf: 'full', duration: 4, backup: 'Othmane Berrada', backupUserId: 5005, note: '', status: 'approved', submittedAt: '2026-08-28T11:04:00+01:00' },
+  { id: 'LV-390', userId: 5004, employee: 'Meriem Tazi', typeId: 'annual', type: 'Annual leave', start: '2026-09-21', end: '2026-09-23', fromHalf: 'full', toHalf: 'full', duration: 3, backup: 'Yassine Fathi', backupUserId: null, note: '', status: 'pending', submittedAt: '2026-09-10T16:40:00+01:00' },
+  { id: 'LV-389', userId: 5006, employee: 'Lina Chakir', typeId: 'sick', type: 'Sick leave', start: '2026-09-07', end: '2026-09-08', fromHalf: 'full', toHalf: 'full', duration: 2, backup: 'Omar Bennani', backupUserId: null, note: '', status: 'pending', submittedAt: '2026-09-07T08:01:00+01:00' },
+  { id: 'LV-388', userId: 5001, employee: 'Ahmed Benali', typeId: 'annual', type: 'Annual leave', start: '2026-08-04', end: '2026-08-08', fromHalf: 'full', toHalf: 'full', duration: 5, backup: 'Sara El Idrissi', backupUserId: 5002, note: 'Summer break', status: 'approved', submittedAt: '2026-07-12T10:22:00+01:00' },
+  { id: 'LV-370', userId: 5001, employee: 'Ahmed Benali', typeId: 'sick', type: 'Sick leave', start: '2026-06-22', end: '2026-06-22', fromHalf: 'full', toHalf: 'full', duration: 1, backup: 'Nadia Rahmani', backupUserId: 5003, note: '', status: 'approved', submittedAt: '2026-06-22T07:45:00+01:00' },
 ]
+
 export const holidays: Holiday[] = [
-  { id: 'h1', name: 'Prophet Birthday', date: '26 Aug 2026', days: 1, recurring: true, type: 'Public' },
-  { id: 'h2', name: 'Green March Day', date: '06 Nov 2026', days: 1, recurring: true, type: 'Public' },
-  { id: 'h3', name: 'Intillj Agency Day', date: '14 Dec 2026', days: 1, recurring: true, type: 'Company' },
+  { id: 'h1', name: 'Prophet Birthday', nameKey: 'holidayProphet', date: '2026-08-26', days: 1, recurring: true, type: 'Public', country: 'MA', site: null },
+  { id: 'h2', name: 'Green March Day', nameKey: 'holidayGreenMarch', date: '2026-11-06', days: 1, recurring: true, type: 'Public', country: 'MA', site: null },
+  { id: 'h3', name: 'Intillj Agency Day', nameKey: 'holidayAgency', date: '2026-12-14', days: 1, recurring: true, type: 'Company', country: null, site: null },
+  { id: 'h4', name: 'Bastille Day', nameKey: 'holidayBastille', date: '2026-07-14', days: 1, recurring: true, type: 'Public', country: 'FR', site: 'Paris' },
+  { id: 'h5', name: 'Throne Day', nameKey: 'holidayThrone', date: '2026-07-30', days: 1, recurring: true, type: 'Public', country: 'MA', site: null },
 ]
+
 export const notifications: Notification[] = [
   { id: 'n1', title: 'Passport expires in 30 days', detail: 'Ahmed Benali · Documents', time: '12 min ago', unread: true, type: 'warning' },
   { id: 'n2', title: 'New onboarding task assigned', detail: 'OB-2026-0012 · ISD', time: '1 hour ago', unread: true, type: 'info' },
   { id: 'n3', title: 'Leave request approved', detail: 'Sara El Idrissi · 4 days', time: 'Yesterday', unread: false, type: 'success' },
+]
+
+export const seedEmployeeNotifications: EmployeeNotification[] = [
+  {
+    id: 'en-leave-388',
+    userId: 5001,
+    type: 'leave-approved',
+    createdAt: '2026-07-14T09:00:00+01:00',
+    read: true,
+    params: { requestId: 'LV-388', days: '5' },
+  },
+  {
+    id: 'en-onb-5001',
+    userId: 5001,
+    type: 'onboarding-update',
+    createdAt: '2026-09-16T10:00:00+01:00',
+    read: false,
+    params: { requestId: 'OB-2026-0012', stage: 'ISD' },
+  },
+  {
+    id: 'en-backup-5005',
+    userId: 5005,
+    type: 'backup-assignment',
+    createdAt: '2026-09-20T09:12:00+01:00',
+    read: false,
+    params: { employee: 'Ahmed Benali', requestId: 'LV-392' },
+  },
+  {
+    id: 'en-leave-391',
+    userId: 5002,
+    type: 'leave-approved',
+    createdAt: '2026-08-30T14:20:00+01:00',
+    read: true,
+    params: { requestId: 'LV-391', days: '4' },
+  },
 ]
