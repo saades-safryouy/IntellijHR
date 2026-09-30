@@ -221,7 +221,15 @@ export function ensureDynamicNotifications(employee: Employee): void {
   if (passportNotif) addEmployeeNotification(passportNotif)
 
   const { percentage } = requireProfile(employee)
-  if (percentage < 100 && !_notifs.some((item) => item.userId === employee.userId && item.type === 'profile-reminder')) {
+
+  if (
+    percentage < 100 &&
+    !_notifs.some(
+      (item) =>
+        item.userId === employee.userId &&
+        item.type === 'profile-reminder'
+    )
+  ) {
     addEmployeeNotification({
       id: `profile-reminder-${employee.userId}`,
       userId: employee.userId,
@@ -232,6 +240,6 @@ export function ensureDynamicNotifications(employee: Employee): void {
   }
 }
 
-function requireProfile() {
+function requireProfile(_employee: Employee) {
   return { percentage: 0 }
 }
