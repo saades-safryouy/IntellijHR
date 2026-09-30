@@ -232,6 +232,6 @@ export function ensureDynamicNotifications(employee: Employee): void {
   }
 }
 
-function requireProfile(employee: Employee) {
-  return import('../utils/profileCompletion').then ? { percentage: 0 } : { percentage: 0 }
+function requireProfile() {
+  return { percentage: 0 }
 }
