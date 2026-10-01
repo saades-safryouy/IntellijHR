@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState } from 'react'
 import type { Role, User, Employee } from '../types/models'
 
 export type AuthContextType = {
@@ -36,21 +36,33 @@ function toSessionUser(source: User | (User & Partial<Employee>)): User {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<(User & Partial<Employee>) | null>(null)
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
-  const [role, setRole] = useState<Role | null>(null)
-
-  useEffect(() => {
+  const [currentUser, setCurrentUser] = useState<(User & Partial<Employee>) | null>(() => {
     const storedUser = sessionStorage.getItem('Intillegence-user')
     const storedAuth = sessionStorage.getItem('Intillegence-authenticated')
-
     if (storedUser && storedAuth === 'true') {
-      const user = JSON.parse(storedUser) as User
-      setCurrentUser(user)
-      setIsAuthenticated(true)
-      setRole(user.role as Role)
+      try {
+        return JSON.parse(storedUser) as User
+      } catch {
+        return null
+      }
     }
-  }, [])
+    return null
+  })
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return sessionStorage.getItem('Intillegence-authenticated') === 'true'
+  })
+  const [role, setRole] = useState<Role | null>(() => {
+    const storedUser = sessionStorage.getItem('Intillegence-user')
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser) as User
+        return (user.role as Role) || null
+      } catch {
+        return null
+      }
+    }
+    return null
+  })
 
   const login = async (email: string, password: string) => {
     const { demoUsers, employees } = await import('../data/mock')

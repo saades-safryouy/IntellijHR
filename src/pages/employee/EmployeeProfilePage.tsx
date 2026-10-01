@@ -9,10 +9,12 @@ import { formatDate } from '../../utils/dates'
 import { employeeDashboardTranslations } from './translations'
 import { ProfileCard, ProgressBar } from './components'
 import type { MaritalStatus } from '../../types/models'
+import { useEmployeeStore } from '../../hooks/useEmployeeStore'
 
 const MARITAL: MaritalStatus[] = ['Single', 'Married', 'Divorced', 'Widowed']
 
 export function EmployeeProfilePage() {
+  useEmployeeStore()
   const { currentUser } = useAuth()
   const { language } = useI18n()
   const t = employeeDashboardTranslations[language]

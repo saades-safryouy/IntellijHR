@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { PageHeader } from '../../components/common/PageHeader'
@@ -11,13 +10,14 @@ import {
 } from '../../data/employeeStore'
 import { employeeDashboardTranslations } from './translations'
 import { EmptyState, NotificationItem } from './components'
+import { useEmployeeStore } from '../../hooks/useEmployeeStore'
 
 export function EmployeeNotificationsPage() {
+  useEmployeeStore()
   const { currentUser } = useAuth()
   const { language } = useI18n()
   const t = employeeDashboardTranslations[language]
   const employee = resolveEmployee(currentUser)
-  const [, tick] = useState(0)
 
   if (!employee) {
     return (
@@ -38,7 +38,6 @@ export function EmployeeNotificationsPage() {
             className="button secondary"
             onClick={() => {
               markAllNotificationsRead(employee.userId)
-              tick((n) => n + 1)
             }}
           >
             {t.markRead}
@@ -57,7 +56,6 @@ export function EmployeeNotificationsPage() {
               dismissLabel={t.dismissNotification}
               onDismiss={(id) => {
                 markNotificationRead(id)
-                tick((n) => n + 1)
               }}
             />
           ))

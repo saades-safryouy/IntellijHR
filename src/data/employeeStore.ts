@@ -25,6 +25,7 @@ import {
   seedEmployeeNotifications,
 } from '../data/mock'
 import { ensurePassportNotification } from '../utils/passport'
+import { calculateProfileCompletion } from '../utils/profileCompletion'
 
 // ── keys ────────────────────────────────────────────────────────────────
 const K = {
@@ -69,9 +70,14 @@ export function resolveEmployee(
 ): Employee | undefined {
   if (!currentUser) return undefined
   const uid = currentUser.userId ?? currentUser.id
-  return _employees.find(
-    (emp) => emp.userId === uid || emp.email.toLowerCase() === currentUser.email.toLowerCase(),
-  )
+  const byUserId = _employees.find((emp) => emp.userId === uid)
+  if (byUserId) return byUserId
+  if (currentUser.email) {
+    return _employees.find(
+      (emp) => emp.email.toLowerCase() === currentUser.email.toLowerCase(),
+    )
+  }
+  return undefined
 }
 
 export function updateEmployeeProfile(
@@ -109,10 +115,19 @@ export function getMyLeaveRequests(userId: number): LeaveRequest[] {
   return _leave.filter((req) => req.userId === userId)
 }
 
-let _nextLeaveSeq = 400
+function getNextLeaveId(): string {
+  const nums = _leave
+    .map((r) => {
+      const match = r.id.match(/^LV-(\d+)$/)
+      return match ? parseInt(match[1], 10) : 0
+    })
+    .filter((n) => !isNaN(n))
+  const max = nums.length > 0 ? Math.max(...nums) : 399
+  return `LV-${max + 1}`
+}
 
 export function submitLeaveRequest(req: Omit<LeaveRequest, 'id'>): LeaveRequest {
-  const created: LeaveRequest = { ...req, id: `LV-${_nextLeaveSeq++}` }
+  const created: LeaveRequest = { ...req, id: getNextLeaveId() }
   _leave = [created, ..._leave]
   writeJson(K.leave, _leave)
   notify()
@@ -220,7 +235,7 @@ export function ensureDynamicNotifications(employee: Employee): void {
   const passportNotif = ensurePassportNotification(employee, _notifs)
   if (passportNotif) addEmployeeNotification(passportNotif)
 
-  const { percentage } = requireProfile(employee)
+  const { percentage } = calculateProfileCompletion(employee)
 
   if (
     percentage < 100 &&
@@ -238,8 +253,4 @@ export function ensureDynamicNotifications(employee: Employee): void {
       read: false,
     })
   }
-}
-
-function requireProfile(_employee: Employee) {
-  return { percentage: 0 }
 }

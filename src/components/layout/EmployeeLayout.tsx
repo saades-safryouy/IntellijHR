@@ -25,6 +25,7 @@ import { LanguageSwitch } from './LanguageSwitch'
 import { EmployeeNotificationPanel } from '../notifications/EmployeeNotificationPanel'
 import { employeeDashboardTranslations } from '../../pages/employee/translations'
 import { getUnreadCount, resolveEmployee } from '../../data/employeeStore'
+import { useEmployeeStore } from '../../hooks/useEmployeeStore'
 
 export function EmployeeLayout({
   language,
@@ -39,6 +40,7 @@ export function EmployeeLayout({
   onLanguageChange: (language: Language) => void
   onLogout: () => void
 }) {
+  useEmployeeStore()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)

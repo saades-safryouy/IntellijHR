@@ -7,13 +7,15 @@ import { ONBOARDING_STAGE_ORDER } from '../../types/models'
 import { formatDate } from '../../utils/dates'
 import { employeeDashboardTranslations } from './translations'
 import { EmptyState, ProgressBar, StatusBadge } from './components'
+import { useEmployeeStore } from '../../hooks/useEmployeeStore'
 
 export function EmployeeOnboardingPage() {
+  useEmployeeStore()
   const { currentUser } = useAuth()
   const { language } = useI18n()
   const t = employeeDashboardTranslations[language]
   const employee = resolveEmployee(currentUser)
-  const [, tick] = useState(0)
+  const [now] = useState(() => Date.now())
   const request = employee ? getMyOnboarding(employee.userId) : undefined
 
   if (!employee) {
@@ -92,7 +94,7 @@ export function EmployeeOnboardingPage() {
         <ul className="holiday-board">
           {visibleTasks.map((task) => {
             const done = isOnboardingTaskDone(task.id, request)
-            const overdue = task.dueDate ? Date.parse(task.dueDate) < Date.now() && !done : false
+            const overdue = task.dueDate ? Date.parse(task.dueDate) < now && !done : false
             return (
               <li key={task.id}>
                 <label className="task-row">
@@ -101,7 +103,6 @@ export function EmployeeOnboardingPage() {
                     checked={done}
                     onChange={(event) => {
                       toggleOnboardingTask(task.id, event.target.checked)
-                      tick((n) => n + 1)
                     }}
                   />
                   <div>

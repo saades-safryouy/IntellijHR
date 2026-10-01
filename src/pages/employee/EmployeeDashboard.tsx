@@ -1,4 +1,4 @@
-import { useEffect, useMemo, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowRight,
@@ -22,10 +22,12 @@ import {
   getMyNotifications,
   getMyOnboarding,
   getUnreadCount,
+  isOnboardingTaskDone,
   markNotificationRead,
   resolveEmployee,
   updateEmployeeProfile,
 } from '../../data/employeeStore'
+import { useEmployeeStore } from '../../hooks/useEmployeeStore'
 import type { Employee } from '../../types/models'
 import {
   daysUntil,
@@ -48,14 +50,12 @@ import {
   SectionLink,
   StatusBadge,
 } from './components'
-import { useState } from 'react'
 
 export function EmployeeDashboard() {
+  useEmployeeStore()
   const { currentUser } = useAuth()
   const { language } = useI18n()
   const t = employeeDashboardTranslations[language]
-  const [, force] = useState(0)
-  const refresh = () => force((n) => n + 1)
 
   const employee = resolveEmployee(currentUser)
 
@@ -63,10 +63,9 @@ export function EmployeeDashboard() {
     if (employee) ensureDynamicNotifications(employee)
   }, [employee])
 
-  const myLeave = useMemo(() => {
-    if (!employee) return []
-    return getLeaveRequests().filter((request) => request.userId === employee.userId)
-  }, [employee, force])
+  const myLeave = employee
+    ? getLeaveRequests().filter((request) => request.userId === employee.userId)
+    : []
 
   if (!currentUser) {
     return (
@@ -111,7 +110,6 @@ export function EmployeeDashboard() {
 
   const snooze = (until: string) => {
     updateEmployeeProfile(employee.userId, { personalInfoDismissedUntil: until })
-    refresh()
   }
 
   return (
@@ -400,7 +398,6 @@ export function EmployeeDashboard() {
                 dismissLabel={t.dismissNotification}
                 onDismiss={(id) => {
                   markNotificationRead(id)
-                  refresh()
                 }}
               />
             ))
@@ -408,6 +405,37 @@ export function EmployeeDashboard() {
             <EmptyState title={t.noNotifications} />
           )}
         </section>
+
+        {onboarding && (
+          <section className="panel">
+            <div className="panel-title">
+              <div>
+                <h2>{t.navOnboarding}</h2>
+                <span>
+                  {onboarding.stage} · {onboarding.progress}%
+                </span>
+              </div>
+              <SectionLink to="/employee/onboarding">{t.viewAll}</SectionLink>
+            </div>
+            <div className="onboarding-summary" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <ProgressBar percentage={onboarding.progress} tone="mint" label={`${onboarding.progress}%`} />
+              <ul className="holiday-board" style={{ margin: 0, padding: 0 }}>
+                {onboarding.employeeTasks
+                  .filter((task) => task.employeeVisible)
+                  .slice(0, 3)
+                  .map((task) => {
+                    const done = isOnboardingTaskDone(task.id, onboarding)
+                    return (
+                      <li key={task.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>{t[task.labelKey as keyof typeof t] || task.labelKey}</span>
+                        <StatusBadge status={done ? 'approved' : 'pending'} label={done ? t.taskDone : t.taskPending} />
+                      </li>
+                    )
+                  })}
+              </ul>
+            </div>
+          </section>
+        )}
 
         <section className="panel">
           <div className="panel-title">

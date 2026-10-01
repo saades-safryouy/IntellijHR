@@ -6,8 +6,10 @@ import { daysUntil, formatDate } from '../../utils/dates'
 import { passportAlertLevel } from '../../utils/passport'
 import { employeeDashboardTranslations } from './translations'
 import { StatusBadge } from './components'
+import { useEmployeeStore } from '../../hooks/useEmployeeStore'
 
 export function EmployeeDocumentsPage() {
+  useEmployeeStore()
   const { currentUser } = useAuth()
   const { language } = useI18n()
   const t = employeeDashboardTranslations[language]

@@ -11,8 +11,10 @@ import {
 } from '../../data/employeeStore'
 import { formatDate } from '../../utils/dates'
 import { employeeDashboardTranslations, interpolate, notifTitleKey } from '../../pages/employee/translations'
+import { useEmployeeStore } from '../../hooks/useEmployeeStore'
 
 export function EmployeeNotificationPanel() {
+  useEmployeeStore()
   const { currentUser } = useAuth()
   const { language } = useI18n()
   const t = employeeDashboardTranslations[language]

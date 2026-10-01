@@ -10,17 +10,6 @@ export interface LeaveBalance {
   remaining: number
 }
 
-function halfAdjustment(fromHalf: HalfDay, toHalf: HalfDay, start: Date, end: Date): number {
-  if (start.getTime() === end.getTime()) {
-    if (fromHalf === 'AM' || fromHalf === 'PM' || toHalf === 'AM' || toHalf === 'PM') return 0.5
-    return 1
-  }
-  let days = 0
-  if (fromHalf === 'PM') days -= 0.5
-  if (toHalf === 'AM') days -= 0.5
-  return days
-}
-
 export function workingLeaveDays(
   startStr: string,
   endStr: string,
@@ -40,7 +29,7 @@ export function workingLeaveDays(
 
   if (start.getTime() === end.getTime()) {
     if (isWeekend(start) || isHolidayDate(start, scoped, employee)) return 0
-    return fromHalf !== 'full' || toHalf !== 'full' ? 0.5 : 1
+    return (fromHalf === 'AM' || fromHalf === 'PM' || toHalf === 'AM' || toHalf === 'PM') ? 0.5 : 1
   }
 
   let count = 0
@@ -49,7 +38,16 @@ export function workingLeaveDays(
     count += 1
   })
 
-  count += halfAdjustment(fromHalf, toHalf, start, end)
+  const startIsWorking = !isWeekend(start) && !isHolidayDate(start, scoped, employee)
+  const endIsWorking = !isWeekend(end) && !isHolidayDate(end, scoped, employee)
+
+  if (startIsWorking && fromHalf === 'PM') {
+    count -= 0.5
+  }
+  if (endIsWorking && toHalf === 'AM') {
+    count -= 0.5
+  }
+
   return Math.max(0, count)
 }
 

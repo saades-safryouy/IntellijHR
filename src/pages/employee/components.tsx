@@ -4,7 +4,7 @@ import { X } from 'lucide-react'
 import type { Employee, EmployeeNotification } from '../../types/models'
 import { employeeFullName, formatDate, nationalityKey } from '../../utils/employeeHelpers'
 import type { EmployeeCopy } from './translations'
-import { interpolate, leaveStatusLabel, notifTitleKey, statusCss } from './translations'
+import { interpolate, notifTitleKey, statusCss } from './translations'
 
 export function StatusBadge({
   status,
@@ -187,5 +187,3 @@ export function ProfileCard({
     </div>
   )
 }
-
-export { leaveStatusLabel }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { PageHeader } from '../../components/common/PageHeader'
@@ -7,8 +7,10 @@ import { daysUntil, formatDate } from '../../utils/dates'
 import { holidayAppliesToEmployee, holidaysForYear, uniqueYears } from '../../utils/holidays'
 import { employeeDashboardTranslations } from './translations'
 import { EmptyState } from './components'
+import { useEmployeeStore } from '../../hooks/useEmployeeStore'
 
 export function EmployeeHolidaysPage() {
+  useEmployeeStore()
   const { currentUser } = useAuth()
   const { language } = useI18n()
   const t = employeeDashboardTranslations[language]
@@ -18,10 +20,9 @@ export function EmployeeHolidaysPage() {
   const [year, setYear] = useState(new Date().getFullYear())
   const [country, setCountry] = useState(employee?.country ?? '')
 
-  const countries = useMemo(() => {
-    const set = new Set(holidays.map((holiday) => holiday.country).filter(Boolean) as string[])
-    return [...set]
-  }, [holidays])
+  const countries = Array.from(
+    new Set(holidays.map((holiday) => holiday.country).filter(Boolean) as string[]),
+  )
 
   const visible = holidaysForYear(holidays, year)
     .filter((holiday) => {

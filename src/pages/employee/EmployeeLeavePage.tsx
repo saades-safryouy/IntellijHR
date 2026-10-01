@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { PageHeader } from '../../components/common/PageHeader'
@@ -17,8 +17,10 @@ import { employeeFullName, formatDate } from '../../utils/employeeHelpers'
 import { calculateLeaveBalances, hasLeaveOverlap, workingLeaveDays } from '../../utils/leave'
 import { employeeDashboardTranslations } from './translations'
 import { EmptyState, ProgressBar, StatusBadge } from './components'
+import { useEmployeeStore } from '../../hooks/useEmployeeStore'
 
 export function EmployeeLeavePage() {
+  useEmployeeStore()
   const { currentUser } = useAuth()
   const { language } = useI18n()
   const t = employeeDashboardTranslations[language]
@@ -27,15 +29,12 @@ export function EmployeeLeavePage() {
   const [detail, setDetail] = useState<LeaveRequest | null>(null)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
-  const [, tick] = useState(0)
-  const refresh = () => tick((n) => n + 1)
 
   const types = getLeaveTypes()
   const colleagues = getEmployees().filter((person) => person.userId !== employee?.userId)
-  const requests = useMemo(
-    () => (employee ? getLeaveRequests().filter((request) => request.userId === employee.userId) : []),
-    [employee, tick],
-  )
+  const requests = employee
+    ? getLeaveRequests().filter((request) => request.userId === employee.userId)
+    : []
 
   if (!employee) {
     return (
@@ -101,7 +100,6 @@ export function EmployeeLeavePage() {
     })
     setOpen(false)
     setMessage(t.requestSent)
-    refresh()
   }
 
   const cancelPending = (request: LeaveRequest) => {
@@ -109,7 +107,6 @@ export function EmployeeLeavePage() {
     if (cancelLeaveRequest(request.id, employee.userId)) {
       setDetail(null)
       setMessage(t.requestCancelled)
-      refresh()
     }
   }
 
