@@ -1,6 +1,6 @@
 import { AlertCircle, CheckCircle2, ClipboardCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/authHooks'
 import { useI18n } from '../../contexts/I18nContext'
 import {
   getMyNotifications,

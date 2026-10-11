@@ -1,27 +1,7 @@
-import { createContext, useContext, useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { Role, User, Employee } from '../types/models'
-
-export type AuthContextType = {
-  currentUser: (User & Partial<Employee>) | null
-  isAuthenticated: boolean
-  role: Role | null
-  login: (email: string, password: string) => Promise<void>
-  logout: () => void
-  hasRole: (role: Role) => boolean
-  hasAnyRole: (roles: Role[]) => boolean
-  isHR: () => boolean
-  isEmployee: () => boolean
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
-
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
-}
+import { demoUsers, employees } from '../data/mock'
+import { AuthContext } from './authHooks'
 
 function toSessionUser(source: User | (User & Partial<Employee>)): User {
   return {
@@ -35,7 +15,7 @@ function toSessionUser(source: User | (User & Partial<Employee>)): User {
   }
 }
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<(User & Partial<Employee>) | null>(() => {
     const storedUser = sessionStorage.getItem('Intillegence-user')
     const storedAuth = sessionStorage.getItem('Intillegence-authenticated')
@@ -65,8 +45,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   })
 
   const login = async (email: string, password: string) => {
-    const { demoUsers, employees } = await import('../data/mock')
-
     let foundUser: User | undefined = demoUsers.find(
       (user) => user.email.toLowerCase() === email.toLowerCase(),
     )
@@ -134,3 +112,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   )
 }
+

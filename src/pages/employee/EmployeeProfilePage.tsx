@@ -1,6 +1,6 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/authHooks'
 import { useI18n } from '../../contexts/I18nContext'
 import { PageHeader } from '../../components/common/PageHeader'
 import { resolveEmployee, updateEmployeeProfile } from '../../data/employeeStore'
@@ -191,4 +191,3 @@ export function EmployeeProfilePage() {
   )
 }
 
-void useMemo

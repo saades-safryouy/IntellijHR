@@ -8,6 +8,7 @@ import {
   X,
 } from 'lucide-react'
 import { PageHeader } from '../../components/common/PageHeader'
+import { Breadcrumb } from '../../components/common/Breadcrumb'
 import { StatusBadge } from '../../components/employees/StatusBadge'
 import { employees } from '../../data/mock'
 import type { Employee, EmployeeStatus } from '../../types/models'
@@ -134,6 +135,12 @@ export function PeoplePage() {
 
   return (
     <div className="page">
+      <Breadcrumb
+        items={[
+          { label: t.people },
+        ]}
+      />
+
       <PageHeader
         eyebrow="PEOPLE · 248 EMPLOYEES"
         title={t.directory}

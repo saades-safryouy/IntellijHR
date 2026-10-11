@@ -10,11 +10,10 @@ import {
   MapPin,
   UserRound,
 } from 'lucide-react'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/authHooks'
 import { useI18n } from '../../contexts/I18nContext'
 import {
   ensureDynamicNotifications,
-  getEmployees,
   getHolidays,
   getLeaveEntitlements,
   getLeaveRequests,
@@ -28,10 +27,8 @@ import {
   updateEmployeeProfile,
 } from '../../data/employeeStore'
 import { useEmployeeStore } from '../../hooks/useEmployeeStore'
-import type { Employee } from '../../types/models'
 import {
   daysUntil,
-  employeeFullName,
   formatDate,
   formatWeekday,
   getGreeting,
@@ -555,24 +552,3 @@ function QuickAction({
   )
 }
 
-function TeamRow({
-  person,
-  t,
-}: {
-  person: Employee
-  t: (typeof employeeDashboardTranslations)[keyof typeof employeeDashboardTranslations]
-}) {
-  return (
-    <div className="team-row">
-      <div className="avatar">{person.initials}</div>
-      <div>
-        <strong>{employeeFullName(person)}</strong>
-        <span>{person.jobTitle}</span>
-      </div>
-      <StatusBadge status={person.status === 'On Leave' ? 'pending' : 'approved'} label={person.status === 'On Leave' ? t.onLeaveToday : t.availableToday} />
-    </div>
-  )
-}
-
-void TeamRow
-void getEmployees

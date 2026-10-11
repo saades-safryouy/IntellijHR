@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/authHooks'
 import type { Role } from '../../types/models'
 
 interface RoleRouteProps {

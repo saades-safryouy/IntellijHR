@@ -4,7 +4,8 @@ import LandingPage from './components/LandingPage'
 import { AppLayout } from './components/layout/AppLayout'
 import { EmployeeLayout } from './components/layout/EmployeeLayout'
 import { LoginPage } from './pages/auth/LoginPage'
-import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { AuthProvider } from './contexts/AuthContext'
+import { useAuth } from './contexts/authHooks'
 import { I18nContext, translations, phraseTranslations } from './contexts/I18nContext'
 import type { Language, Theme, TranslationKey } from './contexts/I18nContext'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
@@ -39,7 +40,13 @@ function AppContent() {
   const { logout } = useAuth()
 
   const text = useMemo(
-    () => (key: TranslationKey | string) => translations[language][key as TranslationKey] || phraseTranslations[language][key] || key,
+    () => (key: TranslationKey | string) => {
+      const locale = translations[language] as Record<string, unknown>
+      const directValue = locale[key]
+      if (typeof directValue === 'string') return directValue
+      const phraseValue = phraseTranslations[language][key]
+      return phraseValue || key
+    },
     [language],
   )
 

@@ -18,7 +18,7 @@ import {
   User,
   X,
 } from 'lucide-react'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/authHooks'
 import type { Language, Theme } from '../../contexts/I18nContext'
 import { Brand } from './Brand'
 import { LanguageSwitch } from './LanguageSwitch'

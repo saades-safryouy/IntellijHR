@@ -17,7 +17,7 @@ import {
 import { navItems, futureModules } from '../../data/navigation'
 import { employees, currentUser } from '../../data/mock'
 import { useI18n, translations } from '../../contexts/I18nContext'
-import type { Language, Theme, Translation } from '../../contexts/I18nContext'
+import type { Language, Theme } from '../../contexts/I18nContext'
 import { Brand } from './Brand'
 import { LanguageSwitch } from './LanguageSwitch'
 import { NotificationPanel } from '../notifications/NotificationPanel'
@@ -39,9 +39,23 @@ export function AppLayout({
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [search, setSearch] = useState('')
-  const t = translations[language]
   const { text } = useI18n()
   const navigate = useNavigate()
+  const leaveLabel = translations[language].leave && typeof translations[language].leave === 'object'
+    ? translations[language].leave.label
+    : 'Leave'
+  const navText: Record<string, string> = {
+    dashboard: translations[language].dashboard,
+    people: translations[language].people,
+    onboarding: translations[language].onboarding,
+    offboarding: translations[language].offboarding,
+    leave: leaveLabel,
+    holidays: translations[language].holidays,
+    documents: translations[language].documents,
+    calendar: translations[language].calendar,
+    reports: translations[language].reports,
+    settings: translations[language].settings,
+  }
 
   const matches = useMemo(
     () =>
@@ -80,15 +94,11 @@ export function AppLayout({
             <NavLink
               key={to}
               to={to}
-              title={
-                collapsed
-                  ? text(t[label as keyof Translation])
-                  : undefined
-              }
+              title={collapsed ? navText[label] : undefined}
               onClick={() => setMobileOpen(false)}
             >
               <Icon size={18} />
-              <span>{text(t[label as keyof Translation])}</span>
+              <span>{navText[label]}</span>
               {badge && <em>{badge}</em>}
             </NavLink>
           ))}
@@ -173,7 +183,7 @@ export function AppLayout({
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder={text(t.search)}
+              placeholder={translations[language].search}
             />
             <kbd>⌘ K</kbd>
 

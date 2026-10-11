@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/authHooks'
 import { useI18n } from '../../contexts/I18nContext'
 import { PageHeader } from '../../components/common/PageHeader'
 import { getHolidays, resolveEmployee } from '../../data/employeeStore'

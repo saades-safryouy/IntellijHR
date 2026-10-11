@@ -9,78 +9,103 @@ export const translations = {
     people: 'People',
     onboarding: 'Onboarding',
     offboarding: 'Offboarding',
-    leave: 'Leave management',
+    leave: {
+      label: 'Leave',
+      balance: 'Leave Balance',
+      request: 'Request Leave',
+      used: 'Used',
+      pending: 'Pending',
+      remaining: 'Remaining',
+      low_balance: 'Low balance',
+    },
     holidays: 'Holidays',
     documents: 'Documents',
     calendar: 'Calendar',
     reports: 'Reports',
     settings: 'Settings',
-
+    common: {
+      tasks: 'Tasks',
+      delete: 'Delete',
+      add_task: 'Add Task',
+    },
     directory: 'People directory',
     search: 'Search people, departments, roles...',
-
     export: 'Export',
     create: 'Create request',
-
     employees: 'Total employees',
     activeOnboarding: 'Active onboarding',
     activeOffboarding: 'Active offboarding',
     onLeave: 'Employees on leave',
-
     recent: 'Recent activity',
     upcoming: 'Upcoming events',
   },
-
   fr: {
     dashboard: 'Tableau de bord',
     people: 'Collaborateurs',
     onboarding: 'Intégration',
     offboarding: 'Départs',
-    leave: 'Gestion des congés',
+    leave: {
+      label: 'Congés',
+      balance: 'Solde des congés',
+      request: 'Demander des congés',
+      used: 'Utilisé',
+      pending: 'En attente',
+      remaining: 'Restant',
+      low_balance: 'Solde bas',
+    },
     holidays: 'Jours fériés',
     documents: 'Documents',
     calendar: 'Calendrier',
     reports: 'Rapports',
     settings: 'Paramètres',
-
+    common: {
+      tasks: 'Tâches',
+      delete: 'Supprimer',
+      add_task: 'Ajouter une tâche',
+    },
     directory: 'Annuaire des collaborateurs',
     search: 'Rechercher...',
-
     export: 'Exporter',
     create: 'Créer une demande',
-
     employees: 'Collaborateurs',
     activeOnboarding: 'Intégrations actives',
     activeOffboarding: 'Départs actifs',
     onLeave: 'En congé',
-
     recent: 'Activité récente',
     upcoming: 'Événements à venir',
   },
-
   ar: {
     dashboard: 'لوحة التحكم',
     people: 'الموظفون',
     onboarding: 'التهيئة',
     offboarding: 'المغادرة',
-    leave: 'إدارة الإجازات',
+    leave: {
+      label: 'الإجازات',
+      balance: 'رصيد الإجازات',
+      request: 'طلب إجازة',
+      used: 'المستخدم',
+      pending: 'قيد الانتظار',
+      remaining: 'المتبقي',
+      low_balance: 'الرصيد منخفض',
+    },
     holidays: 'العطل',
     documents: 'المستندات',
     calendar: 'التقويم',
     reports: 'التقارير',
     settings: 'الإعدادات',
-
+    common: {
+      tasks: 'المهام',
+      delete: 'حذف',
+      add_task: 'إضافة مهمة',
+    },
     directory: 'دليل الموظفين',
     search: 'ابحث عن موظفين أو أقسام...',
-
     export: 'تصدير',
     create: 'إنشاء طلب',
-
     employees: 'إجمالي الموظفين',
     activeOnboarding: 'تهيئة نشطة',
     activeOffboarding: 'مغادرة نشطة',
     onLeave: 'في إجازة',
-
     recent: 'النشاط الأخير',
     upcoming: 'الأحداث القادمة',
   },
@@ -89,9 +114,22 @@ export const translations = {
 export type Translation = typeof translations.en
 export type TranslationKey = keyof Translation
 
+export function resolveLocaleValue(locale: Record<string, unknown>, key: string): string | undefined {
+  const path = key.split('.')
+  let value: unknown = locale
+
+  for (const segment of path) {
+    if (value === null || typeof value !== 'object' || !(segment in value)) {
+      return undefined
+    }
+    value = (value as Record<string, unknown>)[segment]
+  }
+
+  return typeof value === 'string' ? value : undefined
+}
+
 export const phraseTranslations: Record<Language, Record<string, string>> = {
   en: {},
-
   fr: {
     Features: 'Fonctionnalités',
     Modules: 'Modules',
@@ -119,7 +157,6 @@ export const phraseTranslations: Record<Language, Record<string, string>> = {
     Agenda: 'Agenda',
     'Save changes': 'Enregistrer',
   },
-
   ar: {
     Features: 'الميزات',
     Modules: 'الوحدات',
@@ -154,8 +191,7 @@ export const I18nContext = createContext<{
   text: (key: TranslationKey | string) => string
 }>({
   language: 'en',
-  text: (key) =>
-    translations.en[key as TranslationKey] || key,
+  text: (key) => resolveLocaleValue(translations.en as Record<string, unknown>, key) || key,
 })
 
 export function useI18n() {

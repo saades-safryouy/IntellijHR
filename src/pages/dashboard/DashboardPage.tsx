@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react'
 import {
   ArrowRight,
   CalendarDays,
@@ -10,32 +11,88 @@ import {
   Plus,
   Users,
 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { KpiCard } from '../../components/dashboard/KpiCard'
 import { Event } from '../../components/dashboard/Event'
 import { Activity } from '../../components/dashboard/Activity'
 import { PageHeader } from '../../components/common/PageHeader'
 import { PanelTitle } from '../../components/common/PanelTitle'
-import { departments } from '../../data/mock'
+import { Breadcrumb } from '../../components/common/Breadcrumb'
+import { departments, employees as seedEmployees } from '../../data/mock'
+import {
+  calculateDashboardMetrics,
+  generateExportCsv,
+  downloadFile,
+} from '../../components/dashboard/DashboardUtils'
+import { getOnboardingRequests, getLeaveRequests } from '../../data/employeeStore'
 import { translations } from '../../contexts/I18nContext'
 import { useI18n } from '../../contexts/I18nContext'
 
 export function DashboardPage() {
   const { language } = useI18n()
+  const navigate = useNavigate()
   const t = translations[language]
+  const [isExporting, setIsExporting] = useState(false)
+
+  // Get dynamic data
+  const employees = useMemo(() => seedEmployees, [])
+  const onboardingRequests = useMemo(() => getOnboardingRequests(), [])
+  const leaveRequests = useMemo(() => getLeaveRequests(), [])
+
+  const metrics = useMemo(
+    () =>
+      calculateDashboardMetrics(employees, onboardingRequests, leaveRequests),
+    [employees, onboardingRequests, leaveRequests]
+  )
+
+  // Get today's date
+  const today = useMemo(() => {
+    const date = new Date()
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    }).toUpperCase()
+  }, [])
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const csv = generateExportCsv(employees)
+      downloadFile(csv, `employees-export-${Date.now()}.csv`, 'text/csv')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleCreateRequest = () => {
+    navigate('/app/leave')
+  }
 
   return (
     <div className="page dashboard-page">
+      <Breadcrumb
+        items={[
+          { label: t.dashboard },
+        ]}
+      />
+
       <PageHeader
-        eyebrow="MONDAY, 08 SEPTEMBER 2026"
+        eyebrow={today}
         title="Good morning, Saad"
         subtitle="Here is what is happening across IntillegenceHR today."
       >
-        <button className="button secondary">
+        <button
+          className="button secondary"
+          onClick={handleExport}
+          disabled={isExporting}
+        >
           <FileText size={16} />
-          {t.export}
+          {isExporting ? 'Exporting...' : t.export}
         </button>
 
-        <button className="button primary">
+        <button className="button primary" onClick={handleCreateRequest}>
           <Plus size={16} />
           {t.create}
         </button>
@@ -44,44 +101,44 @@ export function DashboardPage() {
       <section className="kpi-grid">
         <KpiCard
           label={t.employees}
-          value="248"
-          trend="+4.2%"
+          value={metrics.totalEmployees.toString()}
+          trend={`+${metrics.employeeGrowth}%`}
           note="vs last month"
           icon={<Users size={18} />}
         />
 
         <KpiCard
           label={t.activeOnboarding}
-          value="12"
-          trend="3"
+          value={metrics.activeOnboarding.toString()}
+          trend={metrics.onboardingAtRisk.toString()}
           note="requiring attention"
           icon={<ClipboardCheck size={18} />}
-          warning
+          warning={metrics.onboardingAtRisk > 0}
         />
 
         <KpiCard
           label={t.activeOffboarding}
-          value="5"
-          trend="2"
+          value={metrics.activeOffboarding.toString()}
+          trend={metrics.offboardingOverdue.toString()}
           note="overdue"
           icon={<LogOut size={18} />}
-          warning
+          warning={metrics.offboardingOverdue > 0}
         />
 
         <KpiCard
           label={t.onLeave}
-          value="18"
-          trend="This week"
-          note="across 5 departments"
+          value={metrics.onLeaveCount.toString()}
+          trend={`${metrics.leavePending}`}
+          note="pending approvals"
           icon={<CalendarDays size={18} />}
         />
 
         <KpiCard
-          label="Profile completion"
-          value="91%"
-          trend="+5%"
-          note="vs last quarter"
-          icon={<CheckCircle2 size={18} />}
+          label="Active employees"
+          value={`${Math.round((metrics.activeEmployees / metrics.totalEmployees) * 100)}%`}
+          trend={metrics.activeEmployees.toString()}
+          note="of total workforce"
+          icon={<Laptop size={18} />}
         />
       </section>
 

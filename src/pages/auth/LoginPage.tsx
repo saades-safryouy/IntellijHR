@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
@@ -10,7 +10,7 @@ import {
   Users,
 } from 'lucide-react'
 import type { Language, Theme } from '../../contexts/I18nContext'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/authHooks'
 import { Brand } from '../../components/layout/Brand'
 import { LanguageSwitch } from '../../components/layout/LanguageSwitch'
 
@@ -43,7 +43,7 @@ export function LoginPage({
     }
   }, [isAuthenticated, role, navigate])
 
-  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError('')
     setLoading(true)
