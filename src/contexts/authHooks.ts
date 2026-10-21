@@ -1,13 +1,15 @@
 import { useContext } from 'react'
-import type { Role, User, Employee } from '../types/models'
+import type { AuthenticatedUser, Role } from '../types/models'
 import { createContext } from 'react'
 
 export type AuthContextType = {
-  currentUser: (User & Partial<Employee>) | null
+  currentUser: AuthenticatedUser | null
   isAuthenticated: boolean
+  isLoading: boolean
+  initializationError: string | null
   role: Role | null
   login: (email: string, password: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
   hasRole: (role: Role) => boolean
   hasAnyRole: (roles: Role[]) => boolean
   isHR: () => boolean
@@ -23,4 +25,3 @@ export function useAuth() {
   }
   return context
 }
-

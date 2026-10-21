@@ -230,6 +230,7 @@ const en = {
   // nationalities
   nationalityMA: 'Morocco',
   nationalityFR: 'France',
+  nationalityUnknown: 'Not provided',
 
   // misc
   loading: 'Loading your workplace…',
@@ -448,6 +449,7 @@ const fr: EmployeeCopy  = {
 
   nationalityMA: 'Maroc',
   nationalityFR: 'France',
+  nationalityUnknown: 'Non renseignée',
 
   loading: 'Chargement de votre espace…',
   notFound: 'Aucun dossier employé trouvé pour ce compte.',
@@ -665,6 +667,7 @@ const ar: EmployeeCopy  = {
 
   nationalityMA: 'المغرب',
   nationalityFR: 'فرنسا',
+  nationalityUnknown: 'غير محددة',
 
   loading: 'جارٍ تحميل مساحة عملك…',
   notFound: 'تعذر العثور على سجل موظف لهذا الحساب.',

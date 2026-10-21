@@ -1,7 +1,8 @@
-import { FileText, MoreHorizontal } from 'lucide-react'
+import { FileText } from 'lucide-react'
 import { PageHeader } from './PageHeader'
 import { PanelTitle } from './PanelTitle'
 import { StatusBadge } from '../employees/StatusBadge'
+import { downloadFile, generateCsv } from '../dashboard/DashboardUtils'
 
 export function ModulePage({
   title,
@@ -10,6 +11,20 @@ export function ModulePage({
   title: string
   data: unknown[]
 }) {
+  const exportData = () => {
+    const records = data.filter(
+      (item): item is Record<string, unknown> => typeof item === 'object' && item !== null,
+    )
+    const headers = [...new Set(records.flatMap((record) => Object.keys(record)))]
+    const rows = records.map((record) =>
+      headers.map((header) => {
+        const value = record[header]
+        return typeof value === 'string' || typeof value === 'number' ? value : JSON.stringify(value ?? '')
+      }),
+    )
+    downloadFile(generateCsv(headers, rows), `${title.toLowerCase().replaceAll(' ', '-')}.csv`)
+  }
+
   return (
     <div className="page">
       <PageHeader
@@ -17,7 +32,7 @@ export function ModulePage({
         title={title}
         subtitle="Keep your people operations moving with clarity and control."
       >
-        <button className="button secondary">
+        <button type="button" className="button secondary" disabled={!data.length} onClick={exportData}>
           <FileText size={16} />
           Export
         </button>
@@ -75,9 +90,6 @@ export function ModulePage({
                     <StatusBadge status={String(record.status || 'Ready')} />
                   )}
 
-                  <button className="icon-button">
-                    <MoreHorizontal size={16} />
-                  </button>
                 </div>
               </div>
             )

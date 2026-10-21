@@ -28,7 +28,7 @@ export function EmployeeProfilePage() {
 
   if (!employee) {
     return (
-      <div className="page">
+      <div className="page employee-profile-page">
         <div className="empty-block">{t.notFound}</div>
       </div>
     )
@@ -91,7 +91,7 @@ export function EmployeeProfilePage() {
   }
 
   return (
-    <div className="page employee-page">
+    <div className="page employee-page employee-profile-page">
       <PageHeader eyebrow={t.employeePortal} title={t.profileTitle} subtitle={t.profileSubtitle}>
         <Link to="/employee/dashboard" className="button secondary">
           {t.navDashboard}
@@ -103,10 +103,10 @@ export function EmployeeProfilePage() {
         )}
       </PageHeader>
 
-      {saved && <div className="toast-inline">{t.savedSuccess}</div>}
-      {error && <div className="toast-inline toast-error">{error}</div>}
+      {saved && <div className="toast-inline" role="status">{t.savedSuccess}</div>}
+      {error && <div className="toast-inline toast-error" role="alert">{error}</div>}
 
-      <section className="panel profile-meter-panel">
+      <section className="panel profile-meter-panel profile-completion-card">
         <div className="panel-title">
           <div>
             <h2>{t.profileCompletion}</h2>
@@ -128,26 +128,26 @@ export function EmployeeProfilePage() {
       </section>
 
       {editing ? (
-        <section className="panel">
+        <section className="panel profile-edit-card">
           <form className="leave-form profile-form" onSubmit={onSave}>
-            <h4>{t.contact}</h4>
+            <h4 className="profile-form-heading">{t.contact}</h4>
             <label>
               {t.personalPhone}
-              <input name="personalPhone" defaultValue={employee.personalPhone} required />
+              <input name="personalPhone" type="tel" autoComplete="tel" defaultValue={employee.personalPhone ?? ''} required />
             </label>
             <label>
               {t.professionalPhone}
-              <input name="professionalPhone" defaultValue={employee.professionalPhone} required />
+              <input name="professionalPhone" type="tel" defaultValue={employee.professionalPhone ?? ''} required />
             </label>
             <label>
               {t.email}
-              <input value={employee.email} disabled readOnly />
+              <input type="email" autoComplete="email" value={employee.email} disabled readOnly />
             </label>
 
-            <h4>{t.family}</h4>
+            <h4 className="profile-form-heading">{t.family}</h4>
             <label>
               {t.maritalStatus}
-              <select name="maritalStatus" defaultValue={employee.maritalStatus}>
+              <select name="maritalStatus" defaultValue={employee.maritalStatus ?? ''}>
                 {MARITAL.map((status) => (
                   <option key={status} value={status}>
                     {status}
@@ -157,7 +157,7 @@ export function EmployeeProfilePage() {
             </label>
             <label>
               {t.numberOfChildren}
-              <input name="numberOfChildren" type="number" min={0} defaultValue={employee.numberOfChildren} required />
+              <input name="numberOfChildren" type="number" min={0} step={1} defaultValue={employee.numberOfChildren ?? ''} required />
             </label>
             <label>
               {t.emergencyContactName}
@@ -172,7 +172,7 @@ export function EmployeeProfilePage() {
               <input name="emergencyContactRelationship" defaultValue={employee.emergencyContactRelationship ?? ''} />
             </label>
 
-            <div className="leave-form-actions">
+            <div className="leave-form-actions profile-form-actions">
               <button type="button" className="button secondary" onClick={() => setEditing(false)}>
                 {t.cancel}
               </button>
@@ -183,11 +183,10 @@ export function EmployeeProfilePage() {
           </form>
         </section>
       ) : (
-        <section className="panel">
+        <section className="panel profile-details-card">
           <ProfileCard employee={employee} t={t} language={language} />
         </section>
       )}
     </div>
   )
 }
-

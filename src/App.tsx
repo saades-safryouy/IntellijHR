@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+ import { useMemo, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
-import LandingPage from './components/LandingPage'
+import LandingPage from './components/landing/LandingPage'
 import { AppLayout } from './components/layout/AppLayout'
 import { EmployeeLayout } from './components/layout/EmployeeLayout'
 import { LoginPage } from './pages/auth/LoginPage'
@@ -33,6 +33,7 @@ import { EmployeeDocumentsPage } from './pages/employee/EmployeeDocumentsPage'
 import { EmployeeOnboardingPage } from './pages/employee/EmployeeOnboardingPage'
 import { EmployeeNotificationsPage } from './pages/employee/EmployeeNotificationsPage'
 import './App.css'
+import './styles.css'
 
 function AppContent() {
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('Intillegence-theme') as Theme) || 'dark')
@@ -147,7 +148,7 @@ function PublicLanding({
       onLanguageChange={onLanguageChange}
       onThemeChange={onThemeChange}
       theme={theme}
-      onNavigate={navigate}
+      onLogin={() => navigate('/login')}
     />
   )
 }

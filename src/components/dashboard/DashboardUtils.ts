@@ -1,9 +1,10 @@
-import type { Employee, OnboardingRequest, LeaveRequest } from '../../types/models'
+import type { Employee, LeaveRequest, OffboardingRequest, OnboardingRequest } from '../../types/models'
 
 export function calculateDashboardMetrics(
   employees: Employee[],
   onboardingRequests: OnboardingRequest[],
-  leaveRequests: LeaveRequest[]
+  leaveRequests: LeaveRequest[],
+  offboardingRequests: OffboardingRequest[] = [],
 ) {
   const totalEmployees = employees.length
   const activeEmployees = employees.filter((e) => e.status === 'Active').length
@@ -17,16 +18,16 @@ export function calculateDashboardMetrics(
     (req) => req.status === 'At risk'
   ).length
 
-  // For demo purposes, assume no active offboarding (would need separate offboarding data)
-  const activeOffboarding = 0
-  const offboardingOverdue = 0
+  const activeOffboarding = offboardingRequests.filter(
+    (request) => request.status !== 'Completed',
+  ).length
+  const offboardingOverdue = offboardingRequests.filter(
+    (request) => request.status === 'Overdue',
+  ).length
 
   // Leave pending approvals
   const leavePending = leaveRequests.filter((req) => req.status === 'pending')
     .length
-
-  // Month-over-month growth (mock calculation for demo)
-  const employeeGrowth = ((activeEmployees - Math.floor(activeEmployees * 0.96)) / activeEmployees * 100).toFixed(1)
 
   return {
     totalEmployees,
@@ -37,7 +38,6 @@ export function calculateDashboardMetrics(
     activeOffboarding,
     offboardingOverdue,
     leavePending,
-    employeeGrowth,
   }
 }
 
@@ -70,12 +70,13 @@ export function generateExportCsv(employees: Employee[]): string {
     e.email,
   ])
 
-  const csvContent = [
-    headers.join(','),
-    ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
-  ].join('\n')
+  return generateCsv(headers, rows)
+}
 
-  return csvContent
+export function generateCsv(headers: string[], rows: Array<Array<string | number | null | undefined>>): string {
+  const escapeCell = (value: string | number | null | undefined) =>
+    `"${String(value ?? '').replaceAll('"', '""')}"`
+  return [headers.map(escapeCell).join(','), ...rows.map((row) => row.map(escapeCell).join(','))].join('\n')
 }
 
 export function downloadFile(
@@ -93,5 +94,3 @@ export function downloadFile(
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
 }
-
-

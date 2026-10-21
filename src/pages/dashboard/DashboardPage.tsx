@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
+import type { CSSProperties } from 'react'
 import {
-  ArrowRight,
   CalendarDays,
   CheckCircle2,
   ClipboardCheck,
@@ -18,31 +18,69 @@ import { Activity } from '../../components/dashboard/Activity'
 import { PageHeader } from '../../components/common/PageHeader'
 import { PanelTitle } from '../../components/common/PanelTitle'
 import { Breadcrumb } from '../../components/common/Breadcrumb'
-import { departments, employees as seedEmployees } from '../../data/mock'
 import {
   calculateDashboardMetrics,
   generateExportCsv,
   downloadFile,
 } from '../../components/dashboard/DashboardUtils'
-import { getOnboardingRequests, getLeaveRequests } from '../../data/employeeStore'
+import {
+  getEmployees,
+  getHolidays,
+  getLeaveRequests,
+  getOffboardingTasks,
+  getOnboardingRequests,
+} from '../../data/employeeStore'
 import { translations } from '../../contexts/I18nContext'
 import { useI18n } from '../../contexts/I18nContext'
+import { useEmployeeStore } from '../../hooks/useEmployeeStore'
+import { calculateProfileCompletion } from '../../utils/profileCompletion'
+import { formatDate, formatDateTime } from '../../utils/dates'
+import { WorkforceAnalytics } from '../../components/dashboard/WorkforceAnalytics'
+import type { OnboardingStage } from '../../types/models'
 
 export function DashboardPage() {
+  useEmployeeStore()
   const { language } = useI18n()
   const navigate = useNavigate()
   const t = translations[language]
   const [isExporting, setIsExporting] = useState(false)
 
-  // Get dynamic data
-  const employees = useMemo(() => seedEmployees, [])
-  const onboardingRequests = useMemo(() => getOnboardingRequests(), [])
-  const leaveRequests = useMemo(() => getLeaveRequests(), [])
+  const employees = getEmployees()
+  const onboardingRequests = getOnboardingRequests()
+  const offboardingRequests = getOffboardingTasks()
+  const leaveRequests = getLeaveRequests()
+  const holidays = getHolidays()
 
   const metrics = useMemo(
     () =>
-      calculateDashboardMetrics(employees, onboardingRequests, leaveRequests),
-    [employees, onboardingRequests, leaveRequests]
+      calculateDashboardMetrics(employees, onboardingRequests, leaveRequests, offboardingRequests),
+    [employees, onboardingRequests, leaveRequests, offboardingRequests]
+  )
+  const profileMetrics = useMemo(() => {
+    if (!employees.length) return { average: 0, complete: 0, incomplete: 0 }
+    const completedCount = employees.filter(
+      (employee) => calculateProfileCompletion(employee).percentage === 100,
+    ).length
+    return {
+      average: Math.round(
+        employees.reduce((sum, employee) => sum + calculateProfileCompletion(employee).percentage, 0) /
+          employees.length,
+      ),
+      complete: completedCount,
+      incomplete: employees.length - completedCount,
+    }
+  }, [employees])
+  const upcomingHolidays = useMemo(
+    () =>
+      holidays
+        .filter((holiday) => holiday.date >= new Date().toISOString().slice(0, 10))
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(0, 3),
+    [holidays],
+  )
+  const recentLeaveRequests = useMemo(
+    () => [...leaveRequests].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)).slice(0, 3),
+    [leaveRequests],
   )
 
   // Get today's date
@@ -80,7 +118,7 @@ export function DashboardPage() {
 
       <PageHeader
         eyebrow={today}
-        title="Good morning, Saad"
+        title="HR workspace overview"
         subtitle="Here is what is happening across IntillegenceHR today."
       >
         <button
@@ -102,8 +140,8 @@ export function DashboardPage() {
         <KpiCard
           label={t.employees}
           value={metrics.totalEmployees.toString()}
-          trend={`+${metrics.employeeGrowth}%`}
-          note="vs last month"
+          trend={`${metrics.activeEmployees} active`}
+          note="employee records"
           icon={<Users size={18} />}
         />
 
@@ -120,7 +158,7 @@ export function DashboardPage() {
           label={t.activeOffboarding}
           value={metrics.activeOffboarding.toString()}
           trend={metrics.offboardingOverdue.toString()}
-          note="overdue"
+          note="overdue workflows"
           icon={<LogOut size={18} />}
           warning={metrics.offboardingOverdue > 0}
         />
@@ -135,7 +173,7 @@ export function DashboardPage() {
 
         <KpiCard
           label="Active employees"
-          value={`${Math.round((metrics.activeEmployees / metrics.totalEmployees) * 100)}%`}
+          value={`${metrics.totalEmployees ? Math.round((metrics.activeEmployees / metrics.totalEmployees) * 100) : 0}%`}
           trend={metrics.activeEmployees.toString()}
           note="of total workforce"
           icon={<Laptop size={18} />}
@@ -143,175 +181,107 @@ export function DashboardPage() {
       </section>
 
       <div className="dashboard-grid">
-        <section className="panel workforce-panel">
-          <PanelTitle
-            title="Workforce overview"
-            subtitle="Headcount by department"
-            action="Last 6 months"
-          />
-
-          <div className="chart-area">
-            <div className="y-axis">
-              <span>80</span>
-              <span>60</span>
-              <span>40</span>
-              <span>20</span>
-              <span>0</span>
-            </div>
-
-            <div className="bar-chart">
-              {departments.map((department, index) => (
-                <div className="bar-group" key={department.id}>
-                  <div className="bars">
-                    <div
-                      className="bar previous"
-                      style={{ height: `${40 + index * 7}px` }}
-                    />
-                    <div
-                      className="bar current"
-                      style={{ height: `${58 + index * 8}px` }}
-                    />
-                  </div>
-                  <span>{department.name.split(' ')[0]}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="chart-legend">
-            <span>
-              <i className="legend-dot blue" />
-              Current
-            </span>
-            <span>
-              <i className="legend-dot muted" />
-              Previous period
-            </span>
-            <strong>
-              <ArrowRight size={14} />
-              8.4% headcount growth
-            </strong>
-          </div>
-        </section>
+        <WorkforceAnalytics
+          employees={employees}
+          leaveRequests={leaveRequests}
+          onboardingRequests={onboardingRequests}
+          offboardingRequests={offboardingRequests}
+          language={language}
+        />
 
         <section className="panel pulse-panel">
           <PanelTitle
             title="HR pulse"
-            subtitle="September 2026"
-            action="View reports"
+            subtitle="Employee profile completeness"
+            action={`${employees.length} records`}
           />
 
-          <div className="pulse-ring">
+          <div className="pulse-ring" style={{ '--profile-completion': `${profileMetrics.average}%` } as CSSProperties}>
             <div>
-              <strong>91%</strong>
-              <span>Profile completion</span>
+              <strong>{profileMetrics.average}%</strong>
+              <span>Average completion</span>
             </div>
           </div>
 
           <div className="pulse-stats">
-            <span>
-              <i className="legend-dot blue" />
-              226 complete
-            </span>
-            <span>
-              <i className="legend-dot orange" />
-              22 need attention
-            </span>
+            <span><i className="legend-dot blue" />{profileMetrics.complete} complete</span>
+            <span><i className="legend-dot orange" />{profileMetrics.incomplete} need attention</span>
           </div>
         </section>
 
         <section className="panel workflow-panel">
           <PanelTitle
             title="Onboarding workflow"
-            subtitle="12 active requests"
+            subtitle={`${metrics.activeOnboarding} active requests`}
             action="View all"
+            onAction={() => navigate('/app/onboarding/requests')}
           />
 
           <div className="workflow-list">
-            {[
-              'Created',
+            {([
               'HR Validation',
-              'Manager',
+              'Manager Approval',
               'Local IT',
               'ISD',
               'Completed',
-            ].map((stage, index) => (
+            ] as OnboardingStage[]).map((stage, index) => {
+              const stageCount = onboardingRequests.filter((request) => request.stage === stage).length
+              return (
               <div className="workflow-step" key={stage}>
                 <div
-                  className={`step-icon ${
-                    index < 3 ? 'done' : index === 3 ? 'current' : ''
-                  }`}
+                  className={`step-icon ${stage === 'Completed' ? 'done' : stageCount ? 'current' : ''}`}
                 >
-                  {index < 3 ? (
+                  {stage === 'Completed' ? (
                     <CheckCircle2 size={15} />
-                  ) : index === 3 ? (
+                  ) : stageCount ? (
                     <Clock3 size={15} />
                   ) : (
                     index + 1
                   )}
                 </div>
                 <span>{stage}</span>
-                <strong>{[12, 10, 8, 6, 4, 2][index]}</strong>
+                <strong>{stageCount}</strong>
               </div>
-            ))}
+              )
+            })}
           </div>
         </section>
 
         <section className="panel events-panel">
           <PanelTitle
-            title={t.upcoming}
-            subtitle="Your schedule"
+            title="Upcoming holidays"
+            subtitle="From the organization calendar"
             action="Open calendar"
+            onAction={() => navigate('/app/calendar')}
           />
-
-          <Event
-            date="Today"
-            time="09:00"
-            title="HR leadership sync"
-            detail="Atlas meeting room"
-            color="blue"
-          />
-          <Event
-            date="Tomorrow"
-            time="10:00"
-            title="Ahmed Benali · Onboarding"
-            detail="ISD technical setup"
-            color="mint"
-          />
-          <Event
-            date="Friday"
-            time="All day"
-            title="Sara El Idrissi · Annual leave"
-            detail="4 working days"
-            color="orange"
-          />
+          {upcomingHolidays.length ? upcomingHolidays.map((holiday) => (
+            <Event
+              key={holiday.id}
+              date={formatDate(holiday.date, language)}
+              time="All day"
+              title={holiday.name}
+              detail={holiday.site ?? holiday.country ?? holiday.type}
+              color={holiday.type === 'Public' ? 'blue' : 'mint'}
+            />
+          )) : <div className="analytics-empty">No upcoming holidays on the calendar.</div>}
         </section>
 
         <section className="panel activity-panel">
           <PanelTitle
-            title={t.recent}
-            subtitle="Across your workspace"
-            action="View audit log"
+            title="Recent leave requests"
+            subtitle="Sorted by submission time"
+            action="View requests"
+            onAction={() => navigate('/app/leave/requests')}
           />
-
-          <Activity
-            icon={<Users size={15} />}
-            title="New employee profile created"
-            detail="Yassine Fathi · Finance"
-            time="18 min ago"
-          />
-          <Activity
-            icon={<CheckCircle2 size={15} />}
-            title="Leave request approved"
-            detail="Sara El Idrissi · Annual leave"
-            time="1 hour ago"
-          />
-          <Activity
-            icon={<Laptop size={15} />}
-            title="Equipment marked as returned"
-            detail="OFF-2026-0006 · MacBook Pro"
-            time="Yesterday"
-          />
+          {recentLeaveRequests.length ? recentLeaveRequests.map((request) => (
+            <Activity
+              key={request.id}
+              icon={<CalendarDays size={15} />}
+              title={`${request.employee} · ${request.type}`}
+              detail={`${request.start} – ${request.end} · ${request.status}`}
+              time={formatDateTime(request.submittedAt, language)}
+            />
+          )) : <div className="analytics-empty">No leave requests have been submitted.</div>}
         </section>
       </div>
     </div>

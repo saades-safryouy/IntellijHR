@@ -17,12 +17,16 @@ export interface Department {
 
 export interface Employee {
   id: number
+  departmentId?: string | null
+  teamId?: string | null
+  positionId?: string | null
+  managerId?: number | null
   firstName: string
   lastName: string
   jobTitle: string
   department: string
   manager: string
-  employmentType: EmploymentType
+  employmentType: EmploymentType | null
   status: EmployeeStatus
   location: string
   country: string
@@ -30,16 +34,17 @@ export interface Employee {
   email: string
   initials: string
   userId: number
+  authUserId?: string | null
   role?: Role
-  gender: 'Male' | 'Female'
-  maritalStatus: MaritalStatus
-  numberOfChildren: number
-  nationalId: string
-  nationalityId: number
+  gender: 'Male' | 'Female' | null
+  maritalStatus: MaritalStatus | null
+  numberOfChildren: number | null
+  nationalId: string | null
+  nationalityId: number | null
   passportNumber: string | null
   passportValidityDate: string | null
-  personalPhone: string
-  professionalPhone: string
+  personalPhone: string | null
+  professionalPhone: string | null
   personalInfoCompletedAt: string | null
   personalInfoDismissedUntil: string | null
   emergencyContactName: string | null
@@ -175,13 +180,14 @@ export interface EmployeeNotification {
 }
 
 export interface User {
-  id: number
+  id: string | number
   name: string
   title: string
   role: Role
   initials: string
   email: string
-  userId?: number
+  userId?: string | number
+  employeeId?: number | null
   firstName?: string
   lastName?: string
   jobTitle?: string
@@ -192,6 +198,8 @@ export interface User {
   status?: EmployeeStatus
   joined?: string
 }
+
+export type AuthenticatedUser = User & Partial<Omit<Employee, 'id' | 'userId'>>
 
 export interface AuditLog {
   id: string

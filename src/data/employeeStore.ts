@@ -37,8 +37,9 @@ const K = {
 function init<T>(key: string, seed: T): T {
   const stored = readJson<T>(key)
   if (stored) return stored
-  writeJson(key, seed)
-  return seed
+  const initial = structuredClone(seed)
+  writeJson(key, initial)
+  return initial
 }
 
 const listeners = new Set<() => void>()
@@ -62,6 +63,49 @@ let _offboardingTasks = init<OffboardingRequest[]>(K.offboardingTasks, seedOffbo
 let _notifications = init<EmployeeNotification[]>(K.notifications, seedEmployeeNotifications)
 let _onboardingTaskState = init<Record<string, boolean>>(K.onboardingTaskState, {})
 
+function mergeDemoRecords<T extends { id: string | number }>(current: T[], seeded: T[]): T[] {
+  const seedIds = new Set(seeded.map((record) => record.id))
+  return [...structuredClone(seeded), ...current.filter((record) => !seedIds.has(record.id))]
+}
+
+function mergeDemoRecordsByKey<T>(current: T[], seeded: T[], keyOf: (record: T) => string): T[] {
+  const seedKeys = new Set(seeded.map(keyOf))
+  return [...structuredClone(seeded), ...current.filter((record) => !seedKeys.has(keyOf(record)))]
+}
+
+export function resetDemoData(confirmed: boolean): void {
+  if (!confirmed) throw new Error('Demo data reset requires explicit confirmation.')
+
+  _employees = mergeDemoRecords(_employees, seedEmployees)
+  _leaveRequests = mergeDemoRecords(_leaveRequests, seedLeave)
+  _leaveEntitlements = mergeDemoRecordsByKey(
+    _leaveEntitlements,
+    seedEntitlements,
+    (item) => `${item.userId}:${item.typeId}`,
+  )
+  _leaveTypes = mergeDemoRecords(_leaveTypes, seedTypes)
+  _holidays = mergeDemoRecords(_holidays, seedHolidays)
+  _onboardingRequests = mergeDemoRecords(_onboardingRequests, seedOnboarding)
+  _offboardingTasks = mergeDemoRecords(_offboardingTasks, seedOffboarding)
+  _notifications = mergeDemoRecords(_notifications, seedEmployeeNotifications)
+
+  const seededTaskIds = new Set(seedOnboarding.flatMap((request) => request.employeeTasks.map((task) => task.id)))
+  _onboardingTaskState = Object.fromEntries(
+    Object.entries(_onboardingTaskState).filter(([taskId]) => !seededTaskIds.has(taskId)),
+  )
+
+  writeJson(K.employees, _employees)
+  writeJson(K.leave, _leaveRequests)
+  writeJson(K.leaveEntitlements, _leaveEntitlements)
+  writeJson(K.leaveTypes, _leaveTypes)
+  writeJson(K.holidays, _holidays)
+  writeJson(K.onboardingRequests, _onboardingRequests)
+  writeJson(K.offboardingTasks, _offboardingTasks)
+  writeJson(K.notifications, _notifications)
+  writeJson(K.onboardingTaskState, _onboardingTaskState)
+  notify()
+}
+
 export function getEmployees(): Employee[] {
   return _employees
 }
@@ -74,19 +118,42 @@ export function getEmployee(userId: number): Employee | undefined {
   return _employees.find((employee) => employee.userId === userId)
 }
 
+export function createEmployee(employee: Omit<Employee, 'id'>): Employee {
+  const nextId = _employees.reduce((maxId, current) => Math.max(maxId, current.id), 0) + 1
+  const created = { ...employee, id: nextId }
+  _employees = [created, ..._employees]
+  writeJson(K.employees, _employees)
+  notify()
+  return created
+}
+
 export function updateEmployee(id: number, updates: Partial<Employee>): Employee | null {
   const index = _employees.findIndex((employee) => employee.id === id)
   if (index === -1) return null
-  _employees[index] = { ..._employees[index], ...updates }
+  _employees = _employees.map((employee, employeeIndex) =>
+    employeeIndex === index ? { ...employee, ...updates } : employee,
+  )
   writeJson(K.employees, _employees)
+  notify()
   return _employees[index]
 }
 
+export function deleteEmployee(id: number): boolean {
+  if (!_employees.some((employee) => employee.id === id)) return false
+  _employees = _employees.filter((employee) => employee.id !== id)
+  writeJson(K.employees, _employees)
+  notify()
+  return true
+}
+
 export function resolveEmployee(
-  currentUser: { id: number; userId?: number; email?: string } | null,
+  currentUser: { id: number | string; userId?: number | string; email?: string } | null,
 ): Employee | undefined {
   if (!currentUser) return undefined
   const uid = currentUser.userId ?? currentUser.id
+  if (typeof uid === 'string') {
+    return _employees.find((employee) => employee.authUserId === uid)
+  }
   const byUserId = _employees.find((employee) => employee.userId === uid)
   if (byUserId) return byUserId
   if (currentUser.email) {
@@ -179,6 +246,7 @@ export function updateLeaveEntitlement(
   if (index === -1) return null
   _leaveEntitlements[index] = { ..._leaveEntitlements[index], ...updates }
   writeJson(K.leaveEntitlements, _leaveEntitlements)
+  notify()
   return _leaveEntitlements[index]
 }
 
@@ -448,6 +516,14 @@ export function approveLeaveRequest(requestId: string): boolean {
   )
   writeJson(K.leave, _leaveRequests)
   notify()
+  addEmployeeNotification({
+    id: `en-leave-approved-${request.id}`,
+    userId: request.userId,
+    type: 'leave-approved',
+    createdAt: new Date().toISOString(),
+    read: false,
+    params: { requestId: request.id, days: String(request.duration) },
+  })
   return true
 }
 
@@ -459,6 +535,14 @@ export function rejectLeaveRequest(requestId: string): boolean {
   )
   writeJson(K.leave, _leaveRequests)
   notify()
+  addEmployeeNotification({
+    id: `en-leave-rejected-${request.id}`,
+    userId: request.userId,
+    type: 'leave-rejected',
+    createdAt: new Date().toISOString(),
+    read: false,
+    params: { requestId: request.id },
+  })
   return true
 }
 

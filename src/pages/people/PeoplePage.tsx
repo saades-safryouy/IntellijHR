@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
+  ChevronLeft,
   ChevronRight,
   FileText,
   MoreHorizontal,
@@ -12,6 +13,8 @@ import { Breadcrumb } from '../../components/common/Breadcrumb'
 import { StatusBadge } from '../../components/employees/StatusBadge'
 import { employees } from '../../data/mock'
 import type { Employee, EmployeeStatus } from '../../types/models'
+import { employeeRepository } from '../../data/mockRepository'
+import { isApiDataMode } from '../../lib/apiClient'
 import { translations } from '../../contexts/I18nContext'
 import { useI18n } from '../../contexts/I18nContext'
 
@@ -90,15 +93,15 @@ function EmployeeDrawer({
           </div>
           <div>
             <span>National ID</span>
-            <strong>{employee.nationalId}</strong>
+            <strong>{employee.nationalId ?? '—'}</strong>
           </div>
           <div>
             <span>Personal Phone</span>
-            <strong>{employee.personalPhone}</strong>
+            <strong>{employee.personalPhone ?? '—'}</strong>
           </div>
           <div>
             <span>Professional Phone</span>
-            <strong>{employee.professionalPhone}</strong>
+            <strong>{employee.professionalPhone ?? '—'}</strong>
           </div>
           <div>
             <span>Passport Number</span>
@@ -106,7 +109,7 @@ function EmployeeDrawer({
           </div>
           <div>
             <span>Passport Expiry</span>
-            <strong>{employee.passportValidityDate}</strong>
+            <strong>{employee.passportValidityDate ?? '—'}</strong>
           </div>
         </div>
       </aside>
@@ -120,17 +123,56 @@ export function PeoplePage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<'All' | EmployeeStatus>('All')
   const [selected, setSelected] = useState<Employee | null>(null)
+  const [page, setPage] = useState(1)
+  const [apiEmployees, setApiEmployees] = useState<Employee[]>([])
+  const [apiTotal, setApiTotal] = useState(0)
+  const [completedQuery, setCompletedQuery] = useState<string | null>(null)
+  const [apiError, setApiError] = useState<{ query: string; message: string } | null>(null)
+  const queryKey = `${page}:${status}:${search}`
+  const loading = isApiDataMode && completedQuery !== queryKey
+  const loadError = apiError?.query === queryKey ? apiError.message : null
+
+  useEffect(() => {
+    if (!isApiDataMode) return
+
+    let active = true
+    employeeRepository.list({
+      page,
+      pageSize: 25,
+      search,
+      sortBy: 'lastName',
+      where: status === 'All' ? undefined : { status },
+    }).then((result) => {
+      if (!active) return
+      setApiEmployees(result.data)
+      setApiTotal(result.total)
+      setApiError((previous) => previous?.query === queryKey ? null : previous)
+    }).catch((error: unknown) => {
+      if (!active) return
+      setApiEmployees([])
+      setApiTotal(0)
+      setApiError({
+        query: queryKey,
+        message: error instanceof Error ? error.message : 'Could not load employees.',
+      })
+    }).finally(() => {
+      if (active) setCompletedQuery(queryKey)
+    })
+
+    return () => {
+      active = false
+    }
+  }, [queryKey, page, search, status])
 
   const filtered = useMemo(
-    () =>
-      employees.filter(
+    () => isApiDataMode ? apiEmployees : employees.filter(
         (employee) =>
           `${employee.firstName} ${employee.lastName} ${employee.jobTitle} ${employee.department}`
             .toLowerCase()
             .includes(search.toLowerCase()) &&
           (status === 'All' || employee.status === status),
       ),
-    [search, status],
+    [apiEmployees, search, status],
   )
 
   return (
@@ -142,7 +184,7 @@ export function PeoplePage() {
       />
 
       <PageHeader
-        eyebrow="PEOPLE · 248 EMPLOYEES"
+        eyebrow={isApiDataMode ? `PEOPLE · ${apiTotal} EMPLOYEES` : 'PEOPLE · 248 EMPLOYEES'}
         title={t.directory}
         subtitle="A single source of truth for your workforce."
       >
@@ -153,26 +195,37 @@ export function PeoplePage() {
       </PageHeader>
 
       <div className="directory-summary">
-        <div>
-          <span>Active employees</span>
-          <strong>226</strong>
-          <small>91.1% of workforce</small>
-        </div>
-        <div>
-          <span>On leave today</span>
-          <strong>18</strong>
-          <small>7.3% of workforce</small>
-        </div>
-        <div>
-          <span>Departments</span>
-          <strong>8</strong>
-          <small>Across 4 locations</small>
-        </div>
-        <div>
-          <span>New this month</span>
-          <strong>+6</strong>
-          <small className="green-text">Ahead of target</small>
-        </div>
+        {isApiDataMode ? (
+          <>
+            <div><span>Matching employees</span><strong>{apiTotal}</strong><small>Secure HR directory</small></div>
+            <div><span>Shown on this page</span><strong>{apiEmployees.length}</strong><small>Page {page}</small></div>
+            <div><span>On leave today</span><strong>—</strong><small>Metric not available</small></div>
+            <div><span>Departments</span><strong>—</strong><small>Metric not available</small></div>
+          </>
+        ) : (
+          <>
+            <div>
+              <span>Active employees</span>
+              <strong>226</strong>
+              <small>91.1% of workforce</small>
+            </div>
+            <div>
+              <span>On leave today</span>
+              <strong>18</strong>
+              <small>7.3% of workforce</small>
+            </div>
+            <div>
+              <span>Departments</span>
+              <strong>8</strong>
+              <small>Across 4 locations</small>
+            </div>
+            <div>
+              <span>New this month</span>
+              <strong>+6</strong>
+              <small className="green-text">Ahead of target</small>
+            </div>
+          </>
+        )}
       </div>
 
       <section className="panel directory-panel">
@@ -181,16 +234,20 @@ export function PeoplePage() {
             <Search size={16} />
             <input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setSearch(event.target.value)
+                setPage(1)
+              }}
               placeholder={t.search}
             />
           </div>
 
           <select
             value={status}
-            onChange={(event) =>
+            onChange={(event) => {
+              setPage(1)
               setStatus(event.target.value as 'All' | EmployeeStatus)
-            }
+            }}
           >
             <option>All</option>
             <option>Active</option>
@@ -223,7 +280,13 @@ export function PeoplePage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((employee) => (
+              {isApiDataMode && loading ? (
+                <tr><td colSpan={7}>Loading employees…</td></tr>
+              ) : loadError ? (
+                <tr><td colSpan={7} role="alert">{loadError}</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan={7}>No employees match these filters.</td></tr>
+              ) : filtered.map((employee) => (
                 <tr key={employee.id} onClick={() => setSelected(employee)}>
                   <td>
                     <div className="employee-cell">
@@ -265,11 +328,27 @@ export function PeoplePage() {
         </div>
 
         <div className="table-footer">
-          <span>Showing {filtered.length} of 248 employees</span>
-          <span>
-            Page 1 of 25
-            <ChevronRight size={15} />
+            <span>
+              {isApiDataMode
+                ? `Showing ${apiEmployees.length} of ${apiTotal} employees`
+                : `Showing ${filtered.length} of 248 employees`}
           </span>
+            {isApiDataMode ? (
+              <span>
+                Page {page} of {Math.max(1, Math.ceil(apiTotal / 25))}
+                <button className="icon-button" disabled={page <= 1} onClick={() => setPage(page - 1)} aria-label="Previous page">
+                  <ChevronLeft size={15} />
+                </button>
+                <button className="icon-button" disabled={page >= Math.ceil(apiTotal / 25)} onClick={() => setPage(page + 1)} aria-label="Next page">
+                  <ChevronRight size={15} />
+                </button>
+              </span>
+            ) : (
+              <span>
+                Page 1 of 25
+                <ChevronRight size={15} />
+              </span>
+            )}
         </div>
       </section>
 

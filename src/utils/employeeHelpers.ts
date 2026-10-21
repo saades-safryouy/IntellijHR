@@ -1,4 +1,4 @@
-import type { Employee, User } from '../types/models'
+import type { AuthenticatedUser, Employee } from '../types/models'
 import { NATIONALITIES } from '../types/models'
 
 export function employeeFullName(employee: Pick<Employee, 'firstName' | 'lastName'>): string {
@@ -11,12 +11,16 @@ export function employeeFullName(employee: Pick<Employee, 'firstName' | 'lastNam
  * NEVER matches Employee.id === User.id (those are different namespaces).
  */
 export function resolveEmployee(
-  currentUser: (User & Partial<Employee>) | null,
+  currentUser: AuthenticatedUser | null,
   directory: Employee[],
 ): Employee | undefined {
   if (!currentUser) return undefined
 
   const uid = currentUser.userId ?? currentUser.id
+
+  if (typeof uid === 'string') {
+    return directory.find((employee) => employee.authUserId === uid)
+  }
 
   const byUserId = directory.find((employee) => employee.userId === uid)
   if (byUserId) return byUserId
@@ -41,8 +45,8 @@ export function getGreeting(language: string): string {
   return greetings[language]?.[period] || greetings.en[period]
 }
 
-export function nationalityKey(nationalityId: number): string {
-  return NATIONALITIES[nationalityId]?.key ?? 'nationalityMA'
+export function nationalityKey(nationalityId: number | null): string {
+  return nationalityId === null ? 'nationalityUnknown' : NATIONALITIES[nationalityId]?.key ?? 'nationalityUnknown'
 }
 
 export { calculateProfileCompletion } from './profileCompletion'
