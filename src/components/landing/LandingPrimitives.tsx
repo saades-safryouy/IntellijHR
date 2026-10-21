@@ -64,7 +64,7 @@ export function SectionHeading({
       <Eyebrow>{eyebrow}</Eyebrow>
       <h2 className="mt-5 text-3xl font-extrabold tracking-tight text-balance text-ihr-fg sm:text-4xl lg:text-5xl">
         {lines.map((l, i) => (
-          <span key={i} className={cx("block", highlightLast && i === lines.length - 1 && lines.length > 1 && "ihr-gradient-text")}>
+          <span key={i} className={cx("block", highlightLast && i === lines.length - 1 && lines.length > 1 && "text-ihr-primary")}>
             {l}
           </span>
         ))}

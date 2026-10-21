@@ -35,7 +35,7 @@ export function HeroSection({ onGetStarted }: { onGetStarted?: () => void }) {
             className="mt-6 text-5xl leading-[1.02] font-extrabold tracking-tight text-ihr-fg sm:text-6xl xl:text-7xl"
           >
             <span className="block">{t.hero.title1}</span>
-            <span className="block pb-2 ihr-gradient-text">{t.hero.title2}</span>
+            <span className="block pb-2 text-ihr-primary">{t.hero.title2}</span>
           </motion.h1>
           <motion.p variants={item} className="mt-6 max-w-xl text-lg text-pretty text-ihr-muted">
             {t.hero.subtitle}
