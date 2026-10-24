@@ -15,9 +15,10 @@ import {
   X,
 } from 'lucide-react'
 import { navItems, futureModules } from '../../data/navigation'
-import { employees, currentUser } from '../../data/mock'
+import { getEmployees } from '../../data/employeeStore'
 import { useI18n, translations } from '../../contexts/I18nContext'
 import type { Language, Theme } from '../../contexts/I18nContext'
+import { useAuth } from '../../contexts/authHooks'
 import { Brand } from './Brand'
 import { LanguageSwitch } from './LanguageSwitch'
 import { NotificationPanel } from '../notifications/NotificationPanel'
@@ -40,6 +41,7 @@ export function AppLayout({
   const [showNotifications, setShowNotifications] = useState(false)
   const [search, setSearch] = useState('')
   const { text } = useI18n()
+  const { currentUser } = useAuth()
   const navigate = useNavigate()
   const leaveLabel = translations[language].leave && typeof translations[language].leave === 'object'
     ? translations[language].leave.label
@@ -62,7 +64,7 @@ export function AppLayout({
 
   const matches = useMemo(
     () =>
-      employees
+      getEmployees()
         .filter((employee) =>
           `${employee.firstName} ${employee.lastName} ${employee.jobTitle} ${employee.department}`
             .toLowerCase()
@@ -128,11 +130,11 @@ export function AppLayout({
           </div>
 
           <div className="mini-user">
-            <div className="avatar">SE</div>
+            <div className="avatar">{currentUser?.initials ?? '??'}</div>
             {!collapsed && (
               <div>
-                <strong>{currentUser.name}</strong>
-                <span>{currentUser.title}</span>
+                <strong>{currentUser?.name ?? '—'}</strong>
+                <span>{currentUser?.title ?? ''}</span>
               </div>
             )}
             <MoreHorizontal size={16} />
@@ -244,10 +246,10 @@ export function AppLayout({
             </div>
 
             <div className="top-user">
-              <div className="avatar">SE</div>
+              <div className="avatar">{currentUser?.initials ?? '??'}</div>
               <div>
-                <strong>{currentUser.name}</strong>
-                <span>{currentUser.title}</span>
+                <strong>{currentUser?.name ?? '—'}</strong>
+                <span>{currentUser?.title ?? ''}</span>
               </div>
             </div>
           </div>

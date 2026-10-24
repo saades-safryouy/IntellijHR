@@ -89,7 +89,7 @@ export function LandingPage({
           <BenefitsSection />
           <FinalCTA onGetStarted={onGetStarted} />
         </main>
-        <LandingFooter />
+        <LandingFooter theme={theme}/>
       </div>
     </LandingProvider>
   );

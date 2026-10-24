@@ -3,7 +3,9 @@ import { AnimatePresence, motion } from "motion/react";
 import { Globe, Menu, Moon, Sun, X, Check } from "lucide-react";
 import { NAV_SECTIONS } from "./landingData";
 import { languageLabels, type LandingLanguage, type LandingTheme } from "./landingTranslations";
-import { BrandMark, cx, scrollToId, useLanding } from "./LandingPrimitives";
+import { cx, scrollToId, useLanding } from "./LandingPrimitives";
+import logo from "../../assets/IAgency_light_logo.png";
+import Dlogo from "../../assets/IAgency_logo.png";
 
 export interface LandingHeaderProps {
   theme: LandingTheme;
@@ -115,9 +117,13 @@ export function LandingHeader({ theme, onThemeToggle, onLanguageChange, onLogin,
             e.preventDefault();
             go("home");
           }}
-          className="flex shrink-0 items-center gap-2.5 font-extrabold tracking-tight text-ihr-fg"
+          className="flex shrink-0 items-center font-extrabold tracking-tight text-ihr-fg"
         >
-          <BrandMark />
+          {theme === "dark" ? (
+            <img src={logo} alt="IntelligenceHR Logo" className="size-12" />
+          ) : (
+            <img src={Dlogo} alt="IntelligenceHR Logo" className="size-12" />
+          )}
           <span className="text-lg">
             Intelligence<span className="text-ihr-primary">HR</span>
           </span>

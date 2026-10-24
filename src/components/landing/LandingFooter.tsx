@@ -1,7 +1,16 @@
 import { Mail, MapPin, Phone } from "lucide-react";
 import { BrandMark, scrollToId, useLanding } from "./LandingPrimitives";
+import logo from "../../assets/IAgency_light_logo.png";
+import Dlogo from "../../assets/IAgency_logo.png";
+import type { LandingTheme } from "./landingTranslations";
 
-export function LandingFooter() {
+
+export interface LandingFooterProps {
+  theme: LandingTheme;
+}
+
+
+export function LandingFooter( { theme }: LandingFooterProps ) {
   const { t } = useLanding();
   const product = [
     { id: "home", label: t.nav.home },
@@ -32,12 +41,19 @@ export function LandingFooter() {
     </li>
   );
 
+
+
+
   return (
     <footer className="border-t border-ihr-border px-4 pt-16 pb-10 sm:px-6 lg:px-8">
       <div className="mx-auto grid max-w-7xl gap-10 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1.2fr]">
         <div>
           <div className="flex items-center gap-2.5 text-lg font-extrabold tracking-tight text-ihr-fg">
-            <BrandMark />
+             {theme === "dark" ? (
+            <img src={logo} alt="IntelligenceHR Logo" className="size-12" />
+          ) : (
+            <img src={Dlogo} alt="IntelligenceHR Logo" className="size-12" />
+          )}
             <span>
               Intelligence<span className="text-ihr-primary">HR</span>
             </span>

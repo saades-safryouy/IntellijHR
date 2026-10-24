@@ -1,8 +1,9 @@
 import { ChevronRight } from 'lucide-react'
 import { PageHeader } from '../../components/common/PageHeader'
-import { currentUser } from '../../data/mock'
+import { useAuth } from '../../contexts/authHooks'
 
 export function SettingsPage() {
+  const { currentUser } = useAuth()
   return (
     <div className="page">
       <PageHeader
@@ -46,11 +47,11 @@ export function SettingsPage() {
           </p>
 
           <div className="settings-avatar">
-            <div className="profile-avatar avatar">SE</div>
+            <div className="profile-avatar avatar">{currentUser?.initials ?? '??'}</div>
 
             <div>
-              <strong>{currentUser.name}</strong>
-              <span>{currentUser.title}</span>
+              <strong>{currentUser?.name ?? '—'}</strong>
+              <span>{currentUser?.title ?? ''}</span>
             </div>
 
             <button className="button secondary">Change photo</button>
@@ -59,17 +60,17 @@ export function SettingsPage() {
           <div className="settings-fields">
             <label>
               Full name
-              <input value={currentUser.name} readOnly />
+              <input value={currentUser?.name ?? ''} readOnly />
             </label>
 
             <label>
               Role
-              <input value={currentUser.title} readOnly />
+              <input value={currentUser?.title ?? ''} readOnly />
             </label>
 
             <label>
               Email
-              <input value="saad@Intillegence.com" readOnly />
+              <input value={currentUser?.email ?? ''} readOnly />
             </label>
 
             <label>
