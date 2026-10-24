@@ -237,6 +237,11 @@ const en = {
   notFound: 'We could not find an employee record for this account.',
   comingSoon: 'Coming soon',
   requestId: 'Request',
+
+
+  askIntelligence: 'Ask Intelligence',
+automations: 'Automations',
+advancedSettings: 'Advanced Settings'
 } as const
 
 const fr: EmployeeCopy  = {
@@ -253,7 +258,9 @@ const fr: EmployeeCopy  = {
   navDocuments: 'Documents',
   navOnboarding: 'Intégration',
   navNotifications: 'Notifications',
-
+askIntelligence: 'Assistant Intelligence',
+automations: 'Automatisations',
+advancedSettings: 'Paramètres avancés',
   employeeId: 'Matricule',
   reportsTo: 'N+1',
 
@@ -485,6 +492,9 @@ const ar: EmployeeCopy  = {
   snoozeTitle: 'ذكّرني لاحقاً',
   snoozeConfirm: 'تأجيل',
   snoozeCancel: 'إلغاء',
+  askIntelligence: 'اسأل إنتليجنس',
+  automations: 'الأتمتة',
+  advancedSettings: 'الإعدادات المتقدمة',
 
   leaveBalance: 'الرصيد المتبقي',
   leaveUsed: 'مستخدم هذه السنة',

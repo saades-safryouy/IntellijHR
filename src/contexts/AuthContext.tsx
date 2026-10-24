@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     return null
   })
-  const [isLoading, setIsLoading] = useState(isApiDataMode)
+  const [isLoading, setIsLoading] = useState<boolean>(isApiDataMode)
   const [initializationError, setInitializationError] = useState<string | null>(null)
 
   useEffect(() => {

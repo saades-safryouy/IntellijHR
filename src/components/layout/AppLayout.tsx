@@ -55,6 +55,9 @@ export function AppLayout({
     calendar: translations[language].calendar,
     reports: translations[language].reports,
     settings: translations[language].settings,
+    askIntelligence: translations[language].askIntelligence,
+    automations: translations[language].automations,
+    advancedSettings: translations[language].advancedSettings,
   }
 
   const matches = useMemo(

@@ -23,6 +23,9 @@ export const translations = {
     calendar: 'Calendar',
     reports: 'Reports',
     settings: 'Settings',
+    askIntelligence: 'Ask Intelligence',
+    automations: 'Automations',
+    advancedSettings: 'Advanced Settings',
     common: {
       tasks: 'Tasks',
       delete: 'Delete',
@@ -58,6 +61,9 @@ export const translations = {
     calendar: 'Calendrier',
     reports: 'Rapports',
     settings: 'Paramètres',
+    askIntelligence: 'Ask Intelligence',
+    automations: 'Automations',
+    advancedSettings: 'Advanced Settings',
     common: {
       tasks: 'Tâches',
       delete: 'Supprimer',
@@ -93,6 +99,9 @@ export const translations = {
     calendar: 'التقويم',
     reports: 'التقارير',
     settings: 'الإعدادات',
+    askIntelligence: 'اسأل إنتليجنس',
+    automations: 'الأتمتة',
+    advancedSettings: 'الإعدادات المتقدمة',
     common: {
       tasks: 'المهام',
       delete: 'حذف',
@@ -197,3 +206,4 @@ export const I18nContext = createContext<{
 export function useI18n() {
   return useContext(I18nContext)
 }
+

@@ -24,7 +24,12 @@ import { RecruitmentPage } from './pages/recruitment/RecruitmentPage'
 import { AttendancePage } from './pages/attendance/AttendancePage'
 import { PerformancePage } from './pages/performance/PerformancePage'
 import { TrainingPage } from './pages/training/TrainingPage'
+import { AskIntelligencePage } from './pages/intelligence/AskIntelligencePage'
+import { AutomationsPage } from './pages/automations/AutomationsPage'
+import { ReportsCenterPage } from './pages/reports/ReportsCenterPage'
+import { AdvancedSettingsPage } from './pages/settings/AdvancedSettingsPage'
 import { PayrollPage } from './pages/payroll/PayrollPage'
+
 import { EmployeeDashboard } from './pages/employee/EmployeeDashboard'
 import { EmployeeProfilePage } from './pages/employee/EmployeeProfilePage'
 import { EmployeeLeavePage } from './pages/employee/EmployeeLeavePage'
@@ -93,6 +98,10 @@ function AppContent() {
               <Route path="performance" element={<PerformancePage />} />
               <Route path="training" element={<TrainingPage />} />
               <Route path="payroll" element={<PayrollPage />} />
+              <Route path="intelligence/ask" element={<AskIntelligencePage />} />
+              <Route path="automations" element={<AutomationsPage />} />
+              <Route path="reports/center" element={<ReportsCenterPage />} />
+              <Route path="settings/advanced" element={<AdvancedSettingsPage />} />
             </Route>
 
             {/* Employee Routes */}

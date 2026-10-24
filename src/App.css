@@ -887,8 +887,229 @@ th { padding:13px 16px; border-bottom:1px solid var(--line); background:var(--su
 td { padding:13px 16px; border-bottom:1px solid var(--line); color:var(--text); font-size:12px; }
 tbody tr:last-child td { border-bottom:0; }
 tbody tr:hover { background:var(--surface-hover); }
-.table-search,.filter-select,.filter-select select,.directory-toolbar select,.panel select { border-color:var(--line); border-radius:11px; background-color:var(--surface-raised); color:var(--text); }
-.module-hero { border:1px solid var(--line); border-radius:22px; background:linear-gradient(110deg,rgba(37,99,235,.14),transparent 70%),var(--surface); box-shadow:0 12px 35px rgba(2,8,23,.1); }
+/* ==========================================================================
+   Form controls: toolbar selects, filter selects, panel selects, table search
+   ========================================================================== */
+
+/* If .filter-select wraps a <select>, style the inner select only.
+   This prevents a double border/padding (wrapper + select). */
+.filter-select:has(select) {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+/* Base ---------------------------------------------------------------- */
+:is(
+    .directory-toolbar select,
+    .filter-select,
+    .filter-select select,
+    .panel select,
+    .table-search
+) {
+    /* Local tokens (fallbacks first, refined below where color-mix exists) */
+    --field-border: var(--line);
+    --field-border-hover: var(--blue);
+    --field-bg: var(--surface-raised);
+    --field-bg-hover: var(--surface-raised);
+    --field-ring: var(--blue);
+    --field-arrow: var(--muted);
+    --field-danger: var(--danger, #d92d20);
+
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 14px;
+
+    border: 1px solid var(--field-border);
+    border-radius: 11px;
+
+    background-color: var(--field-bg);
+    color: var(--text);
+
+    font: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+
+    /* Transparent (not none) so focus stays visible in forced-colors mode */
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: none;
+
+    -webkit-appearance: none;
+    appearance: none;
+
+    transition:
+        border-color 160ms ease,
+        background-color 160ms ease,
+        box-shadow 160ms ease;
+}
+
+@supports (color: color-mix(in srgb, red, blue)) {
+    :is(
+        .directory-toolbar select,
+        .filter-select,
+        .filter-select select,
+        .panel select,
+        .table-search
+    ) {
+        --field-border-hover: color-mix(in srgb, var(--blue) 55%, var(--line));
+        --field-bg-hover: color-mix(in srgb, var(--blue) 3%, var(--surface-raised));
+        --field-ring: color-mix(in srgb, var(--blue) 20%, transparent);
+    }
+}
+
+/* Select: custom chevron ------------------------------------------------ */
+:is(
+    .directory-toolbar select,
+    .filter-select select,
+    .panel select,
+    select.filter-select
+):not([multiple]) {
+    padding-inline-end: 40px;
+    cursor: pointer;
+    text-overflow: ellipsis;
+
+    /* Two gradients form a small chevron that follows --field-arrow */
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--field-arrow) 50%),
+        linear-gradient(135deg, var(--field-arrow) 50%, transparent 50%);
+    background-position:
+        calc(100% - 20px) 50%,
+        calc(100% - 15px) 50%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+}
+
+[dir="rtl"] :is(
+    .directory-toolbar select,
+    .filter-select select,
+    .panel select,
+    select.filter-select
+):not([multiple]) {
+    background-position:
+        calc(0% + 15px) 50%,
+        calc(0% + 20px) 50%;
+}
+
+/* Multi-select: no chevron, normal text cursor */
+:is(.directory-toolbar select, .filter-select select, .panel select)[multiple] {
+    padding-block: 10px;
+    cursor: default;
+}
+
+/* Search input ---------------------------------------------------------- */
+.table-search::placeholder {
+    color: var(--muted);
+    opacity: 1;
+}
+
+.table-search::-webkit-search-decoration {
+    display: none;
+}
+
+/* Hover ----------------------------------------------------------------- */
+:is(
+    .directory-toolbar select,
+    .filter-select,
+    .filter-select select,
+    .panel select,
+    .table-search
+):hover:not(:disabled) {
+    --field-arrow: var(--text);
+    border-color: var(--field-border-hover);
+    background-color: var(--field-bg-hover);
+}
+
+/* Focus ----------------------------------------------------------------- */
+:is(
+    .directory-toolbar select,
+    .filter-select,
+    .filter-select select,
+    .panel select,
+    .table-search
+):focus-visible {
+    --field-arrow: var(--blue);
+    border-color: var(--blue);
+    background-color: var(--field-bg);
+    box-shadow: 0 0 0 3px var(--field-ring);
+}
+
+/* Invalid --------------------------------------------------------------- */
+:is(
+    .directory-toolbar select,
+    .filter-select,
+    .filter-select select,
+    .panel select,
+    .table-search
+)[aria-invalid="true"] {
+    border-color: var(--field-danger);
+}
+
+:is(
+    .directory-toolbar select,
+    .filter-select,
+    .filter-select select,
+    .panel select,
+    .table-search
+)[aria-invalid="true"]:focus-visible {
+    border-color: var(--field-danger);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--field-danger) 20%, transparent);
+}
+
+/* Disabled / read-only -------------------------------------------------- */
+:is(
+    .directory-toolbar select,
+    .filter-select,
+    .filter-select select,
+    .panel select,
+    .table-search
+):disabled {
+    --field-arrow: var(--muted);
+    opacity: 0.55;
+    cursor: not-allowed;
+    background-color: var(--field-bg);
+    border-color: var(--field-border);
+}
+
+/* Dropdown options ------------------------------------------------------ */
+:is(
+    .directory-toolbar select,
+    .filter-select select,
+    .panel select
+) :is(option, optgroup) {
+    background-color: var(--surface-raised);
+    color: var(--text);
+}
+
+/* Touch devices: 16px prevents iOS Safari from zooming on focus ---------- */
+@media (pointer: coarse) {
+    :is(
+        .directory-toolbar select,
+        .filter-select,
+        .filter-select select,
+        .panel select,
+        .table-search
+    ) {
+        min-height: 44px;
+        font-size: 16px;
+    }
+}
+
+/* Respect reduced motion ------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+    :is(
+        .directory-toolbar select,
+        .filter-select,
+        .filter-select select,
+        .panel select,
+        .table-search
+    ) {
+        transition: none;
+    }
+}.module-hero { border:1px solid var(--line); border-radius:22px; background:linear-gradient(110deg,rgba(37,99,235,.14),transparent 70%),var(--surface); box-shadow:0 12px 35px rgba(2,8,23,.1); }
 .module-tile { border-radius:16px; }
 .calendar-panel,.document-panel { border-radius:20px; }
 .calendar-cell { border-radius:13px; }

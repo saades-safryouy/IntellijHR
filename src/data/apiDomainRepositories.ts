@@ -1,6 +1,109 @@
 import { apiData, apiRequest } from '../lib/apiClient'
-import type { Holiday, LeaveRequest } from '../types/models'
+import type { Department, Holiday, LeaveRequest } from '../types/models'
 import type { MockRepository, RepositoryPage, RepositoryQuery } from './mockRepository'
+
+export interface ApiDepartment {
+  id: string
+  code: string
+  name: string
+  parent_department_id?: string | null
+  is_active?: boolean
+  created_at?: string
+  updated_at?: string
+}
+
+export const apiDepartmentRepository: MockRepository<Department> = {
+  async list(query: RepositoryQuery<Department> = {}): Promise<RepositoryPage<Department>> {
+    const params = new URLSearchParams()
+    params.set('page', String(query.page ?? 1))
+    params.set('pageSize', String(query.pageSize ?? 25))
+    if (query.search) params.set('q', query.search)
+    if (query.where?.isActive !== undefined) params.set('active', String(query.where.isActive))
+
+    const response = await apiRequest<{ data: ApiDepartment[]; page: number; pageSize: number; total: number }>(`/api/v1/departments?${params}`)
+    const data: Department[] = response.data.map((item) => ({
+      id: item.id,
+      name: item.name,
+      code: item.code,
+      isActive: item.is_active ?? true,
+      parentDepartmentId: item.parent_department_id ?? null,
+      head: '',
+      employeeCount: 0,
+      color: '#3b82f6',
+    }))
+    return { data, page: response.page, pageSize: response.pageSize, total: response.total }
+  },
+  async get(id: string | number): Promise<Department | null> {
+    try {
+      const response = await apiRequest<{ data: ApiDepartment }>(`/api/v1/departments/${id}`)
+      const item = response.data
+      return {
+        id: item.id,
+        name: item.name,
+        code: item.code,
+        isActive: item.is_active ?? true,
+        parentDepartmentId: item.parent_department_id ?? null,
+        head: '',
+        employeeCount: 0,
+        color: '#3b82f6',
+      }
+    } catch {
+      return null
+    }
+  },
+  async create(input: Omit<Department, 'id'>): Promise<Department> {
+    const payload = {
+      name: input.name,
+      code: input.code ?? input.name.toUpperCase().replace(/\s+/g, '-'),
+      is_active: input.isActive ?? true,
+      parent_department_id: input.parentDepartmentId ?? null,
+    }
+    const response = await apiRequest<{ data: ApiDepartment }>(`/api/v1/departments`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+    const item = response.data
+    return {
+      id: item.id,
+      name: item.name,
+      code: item.code,
+      isActive: item.is_active ?? true,
+      parentDepartmentId: item.parent_department_id ?? null,
+      head: '',
+      employeeCount: 0,
+      color: '#3b82f6',
+    }
+  },
+  async update(id: string | number, updates: Partial<Omit<Department, 'id'>>): Promise<Department | null> {
+    const payload: Record<string, any> = {}
+    if (updates.name !== undefined) payload.name = updates.name
+    if (updates.code !== undefined) payload.code = updates.code
+    if (updates.isActive !== undefined) payload.is_active = updates.isActive
+    if (updates.parentDepartmentId !== undefined) payload.parent_department_id = updates.parentDepartmentId
+
+    const response = await apiRequest<{ data: ApiDepartment }>(`/api/v1/departments/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+    const item = response.data
+    return {
+      id: item.id,
+      name: item.name,
+      code: item.code,
+      isActive: item.is_active ?? true,
+      parentDepartmentId: item.parent_department_id ?? null,
+      head: '',
+      employeeCount: 0,
+      color: '#3b82f6',
+    }
+  },
+  async delete(id: string | number): Promise<boolean> {
+    await apiRequest<void>(`/api/v1/departments/${id}`, {
+      method: 'DELETE',
+    })
+    return true
+  },
+}
 
 export const apiLeaveRepository: MockRepository<LeaveRequest> = {
   async list(query: RepositoryQuery<LeaveRequest> = {}): Promise<RepositoryPage<LeaveRequest>> {

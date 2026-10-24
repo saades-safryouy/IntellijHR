@@ -10,9 +10,12 @@ export type HolidayKind = 'Public' | 'Company'
 export interface Department {
   id: string
   name: string
-  head: string
-  employeeCount: number
-  color: string
+  head?: string
+  employeeCount?: number
+  color?: string
+  code?: string
+  isActive?: boolean
+  parentDepartmentId?: string | null
 }
 
 export interface Employee {

@@ -18,10 +18,11 @@ import {
   updateEmployee,
   updateOnboardingTask,
 } from './employeeStore'
-import type { Employee, LeaveRequest, OffboardingRequest, OnboardingRequest } from '../types/models'
+import type { Department, Employee, LeaveRequest, OffboardingRequest, OnboardingRequest } from '../types/models'
 import { isApiDataMode } from '../lib/apiClient'
 import { apiEmployeeRepository } from './apiEmployeeRepository'
-import { apiLeaveRepository } from './apiDomainRepositories'
+import { apiLeaveRepository, apiDepartmentRepository } from './apiDomainRepositories'
+import { departments } from './mock'
 
 export type RepositoryOperation = 'list' | 'get' | 'create' | 'update' | 'delete'
 
@@ -158,6 +159,29 @@ export const leaveRequestRepository = isApiDataMode
       create: createLeaveRequest,
       update: updateLeaveRequest,
       delete: deleteLeaveRequest,
+    })
+export const departmentRepository = isApiDataMode
+  ? apiDepartmentRepository
+  : createMockRepository<Department>({
+      read: () => departments,
+      get: (id) => departments.find((d) => d.id === id) ?? null,
+      create: (input) => {
+        const newDept: Department = { id: String(Date.now()), employeeCount: 0, color: '#3b82f6', head: '', ...input }
+        departments.push(newDept)
+        return newDept
+      },
+      update: (id, updates) => {
+        const index = departments.findIndex((d) => d.id === id)
+        if (index === -1) return null
+        departments[index] = { ...departments[index], ...updates }
+        return departments[index]
+      },
+      delete: (id) => {
+        const index = departments.findIndex((d) => d.id === id)
+        if (index === -1) return false
+        departments.splice(index, 1)
+        return true
+      },
     })
 
 export const onboardingRepository = createMockRepository<OnboardingRequest>({

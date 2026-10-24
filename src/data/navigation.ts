@@ -13,6 +13,7 @@ import {
   WalletCards,
 } from 'lucide-react'
 
+
 export type NavItem = {
   to: string
   label: string
@@ -71,6 +72,22 @@ export const navItems: NavItem[] = [
     to: '/app/settings',
     label: 'settings',
     icon: Settings,
+  },
+  {
+    to: '/app/intelligence/ask',
+    label: 'askIntelligence',
+    icon: BriefcaseBusiness,
+    badge: 'AI',
+  },
+  {
+    to: '/app/automations',
+    label: 'automations',
+    icon: Clock3,
+  },
+  {
+    to: '/app/settings/advanced',
+    label: 'advancedSettings',
+    icon: GraduationCap,
   },
 ]
 
